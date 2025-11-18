@@ -1,0 +1,20 @@
+1. DOCUMENTACIÓN AUTOMÁTICA (OpenAPI/Swagger)
+Crear un endpoint /api/v1/docs que genere documentación automática.
+
+2. RATE LIMITING
+Límite de peticiones por API Key para evitar abusos.
+
+3. CACHE
+Cachear respuestas para mejorar rendimiento.
+
+4. WEBHOOKS
+Notificaciones automáticas cuando ocurren eventos.
+
+5. FILTROS AVANZADOS
+text
+/api/v1/products?category=5&min_price=10&max_price=50&in_stock=1
+6. BÚSQUEDA
+text
+/api/v1/products/search?q=bombilla&category=3
+7. SISTEMA DE PLUGINS
+Para que otros módulos puedan añadir endpoints fácilmente.
