@@ -1,20 +1,18 @@
-1. DOCUMENTACIÓN AUTOMÁTICA (OpenAPI/Swagger)
-Crear un endpoint /api/v1/docs que genere documentación automática.
+🗓️ PLAN DE TRABAJO CONCRETO:
+HOY:
+✅ Explicar API Key Legacy en el template
 
-2. RATE LIMITING
-Límite de peticiones por API Key para evitar abusos.
+✅ Commit de lo que llevamos
 
-3. CACHE
-Cachear respuestas para mejorar rendimiento.
+MAÑANA:
+🔧 Sistema de permisos por campos
 
-4. WEBHOOKS
-Notificaciones automáticas cuando ocurren eventos.
+🔧 Endpoint /api/v1/products/all
 
-5. FILTROS AVANZADOS
-text
-/api/v1/products?category=5&min_price=10&max_price=50&in_stock=1
-6. BÚSQUEDA
-text
-/api/v1/products/search?q=bombilla&category=3
-7. SISTEMA DE PLUGINS
-Para que otros módulos puedan añadir endpoints fácilmente.
+PRÓXIMA SEMANA:
+🎓 Webhooks (si te apetece aprender)
+
+🎓 Sistema de plugins
+
+CUANDO QUIERAS:
+📄 PDF documentación
