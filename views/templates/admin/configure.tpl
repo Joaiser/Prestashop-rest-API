@@ -1,183 +1,115 @@
 <div class="panel">
   <div class="panel-heading">
-    <i class="icon icon-key"></i> Configuración API - Producción
+    <i class="icon icon-key"></i> Configuración API - Salamandra Luz
   </div>
 
+  <!-- ✅ SECCIÓN SISTEMA MULTI-CLIENTE -->
+  <div class="alert alert-success">
+    <h4><i class="icon icon-rocket"></i> Sistema Multi-Cliente Activo</h4>
+    <p>Gestiona múltiples clientes API desde el nuevo panel:</p>
+    <a href="{$link->getAdminLink('AdminMyApiClients')}" class="btn btn-success">
+      <i class="icon icon-users"></i> Gestionar Clientes API
+    </a>
+    <a href="{$api_url}/../docs" target="_blank" class="btn btn-info">
+      <i class="icon icon-book"></i> Ver Documentación Completa
+    </a>
+  </div>
+
+  <!-- ✅ INFORMACIÓN BÁSICA -->
   <div class="alert alert-info">
-    <strong>URL Base de la API:</strong> {$api_url}
+    <strong>🌐 URL Base de la API:</strong> {$api_url}
   </div>
 
   <div class="alert alert-warning">
-    <strong>API Key Actual:</strong> {$api_key|default:'No generada aún'}
+    <strong>🔑 API Key Legacy:</strong> {$api_key|default:'No generada aún'}
+    <br><small><i class="icon icon-info"></i> Esta clave es para compatibilidad. Usa el sistema multi-cliente para
+      nuevos desarrollos.</small>
   </div>
 
-  <form method="post">
+  <!-- ✅ GENERAR KEY LEGACY -->
+  <form method="post" class="form-inline">
     <button type="submit" name="generate_key" class="btn btn-primary">
-      <i class="icon icon-refresh"></i> Generar Nueva API Key
+      <i class="icon icon-refresh"></i> Generar Nueva API Key Legacy
     </button>
+    <span class="help-block"><small>Solo si necesitas compatibilidad con sistemas antiguos</small></span>
   </form>
 
   <hr>
 
-  <h4>Cómo usar la API:</h4>
-  <pre>
-// Con header
-curl -H "X-API-Key: {$api_key}" "{$api_url}"
-
-// Con parámetro
-curl "{$api_url}?api_key={$api_key}"
-    </pre>
-
-  <h4>📦 Endpoints de Productos:</h4>
-  <div class="table-responsive">
-    <table class="table table-bordered">
-      <thead>
-        <tr>
-          <th>Método</th>
-          <th>Endpoint</th>
-          <th>Descripción</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><span class="label label-success">GET</span></td>
-          <td><code>/api/v1/products</code></td>
-          <td>Listar productos (con paginación)</td>
-        </tr>
-        <tr>
-          <td><span class="label label-success">GET</span></td>
-          <td><code>/api/v1/products/123</code></td>
-          <td>Obtener producto específico (detalles completos)</td>
-        </tr>
-        <tr>
-          <td><span class="label label-success">GET</span></td>
-          <td><code>/api/v1/products/123/images</code></td>
-          <td><strong>NUEVO:</strong> Obtener todas las imágenes del producto en todos los tamaños</td>
-        </tr>
-        <tr>
-          <td><span class="label label-success">GET</span></td>
-          <td><code>/api/v1/products/featured</code></td>
-          <td>Productos destacados (ofertas)</td>
-        </tr>
-        <tr>
-          <td><span class="label label-success">GET</span></td>
-          <td><code>/api/v1/products/search</code></td>
-          <td>Buscar productos (próximamente)</td>
-        </tr>
-        <tr>
-          <td><span class="label label-success">GET</span></td>
-          <td><code>/api/v1/products/categories/123</code></td>
-          <td>Obtener categorías de un producto</td>
-        </tr>
-        <tr>
-          <td><span class="label label-primary">POST</span></td>
-          <td><code>/api/v1/products</code></td>
-          <td>Crear nuevo producto</td>
-        </tr>
-        <tr>
-          <td><span class="label label-warning">PUT</span></td>
-          <td><code>/api/v1/products/123</code></td>
-          <td>Actualizar producto existente</td>
-        </tr>
-        <tr>
-          <td><span class="label label-danger">DELETE</span></td>
-          <td><code>/api/v1/products/123</code></td>
-          <td>Eliminar producto</td>
-        </tr>
-      </tbody>
-    </table>
+  <!-- ✅ ACCESO RÁPIDO -->
+  <h4><i class="icon icon-bolt"></i> Acceso Rápido</h4>
+  <div class="row">
+    <div class="col-md-4">
+      <div class="panel panel-default">
+        <div class="panel-body text-center">
+          <i class="icon icon-users icon-3x text-success"></i>
+          <h4>Clientes API</h4>
+          <p>Gestiona empresas externas</p>
+          <a href="{$link->getAdminLink('AdminMyApiClients')}" class="btn btn-success btn-sm">
+            Administrar
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="panel panel-default">
+        <div class="panel-body text-center">
+          <i class="icon icon-book icon-3x text-info"></i>
+          <h4>Documentación</h4>
+          <p>API completa interactiva</p>
+          <a href="{$api_url}/../docs" target="_blank" class="btn btn-info btn-sm">
+            Ver Docs
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="panel panel-default">
+        <div class="panel-body text-center">
+          <i class="icon icon-code icon-3x text-warning"></i>
+          <h4>Probar API</h4>
+          <p>Testing inmediato</p>
+          <a href="{$api_url}?page=1&limit=5" target="_blank" class="btn btn-warning btn-sm">
+            Test Endpoint
+          </a>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <h4>📁 Endpoints de Categorías:</h4>
-  <div class="table-responsive">
-    <table class="table table-bordered">
-      <thead>
-        <tr>
-          <th>Método</th>
-          <th>Endpoint</th>
-          <th>Descripción</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><span class="label label-success">GET</span></td>
-          <td><code>/api/v1/categories</code></td>
-          <td>Listar todas las categorías</td>
-        </tr>
-      </tbody>
-    </table>
+  <!-- ✅ USO BÁSICO -->
+  <h4><i class="icon icon-terminal"></i> Uso Básico</h4>
+  <div class="well">
+    <strong>Con header:</strong>
+    <pre>curl -H "X-API-Key: {$api_key}" "{$api_url}?page=1&limit=10"</pre>
+
+    <strong>Con parámetro:</strong>
+    <pre>curl "{$api_url}?api_key={$api_key}&page=1&limit=10"</pre>
   </div>
 
-  <h4>🔧 Parámetros de Consulta (Query Parameters):</h4>
+  <!-- ✅ ESTADO DEL SISTEMA -->
+  <h4><i class="icon icon-cogs"></i> Estado del Sistema</h4>
   <div class="alert alert-info">
-    <strong>Para GET /api/v1/products:</strong>
-    <ul>
-      <li><code>?page=2</code> - Página específica (default: 1)</li>
-      <li><code>?limit=20</code> - Productos por página (max: 100, default: 50)</li>
-      <li><code>?api_key=tu_api_key</code> - Autenticación vía query parameter</li>
-    </ul>
+    <p><strong>✅ API Multi-Cliente:</strong> <span class="label label-success">Activo</span></p>
+    <p><strong>✅ Documentación Swagger:</strong> <span class="label label-success">Disponible</span></p>
+    <p><strong>✅ Endpoints CRUD:</strong> <span class="label label-success">Completos</span></p>
+    <p><strong>✅ Soporte CORS:</strong> <span class="label label-success">Habilitado</span></p>
   </div>
 
-  <h4>🖼️ Ejemplo de Respuesta de Imágenes:</h4>
-  <pre>
-{ldelim}
-  "success": true,
-  "data": [
-    {ldelim}
-      "id": 123,
-      "position": 1,
-      "cover": true,
-      "legend": "Product main image",
-      "sizes": {ldelim}
-        "small_default": {ldelim}
-          "url": "https://tutienda.com/img/p/1/2/3-small_default.jpg",
-          "width": 125,
-          "height": 125
-        {rdelim},
-        "medium_default": {ldelim}
-          "url": "https://tutienda.com/img/p/1/2/3-medium_default.jpg",
-          "width": 450,
-          "height": 450
-        {rdelim},
-        "large_default": {ldelim}
-          "url": "https://tutienda.com/img/p/1/2/3-large_default.jpg",
-          "width": 800,
-          "height": 800
-        {rdelim},
-        "home_default": {ldelim}
-          "url": "https://tutienda.com/img/p/1/2/3-home_default.jpg",
-          "width": 250,
-          "height": 250
-        {rdelim},
-        "original": {ldelim}
-          "url": "https://tutienda.com/img/p/1/2/3.jpg",
-          "width": null,
-          "height": null
-        {rdelim}
-      {rdelim}
-    {rdelim}
-  ]
-{rdelim}
-  </pre>
-
-  <h4>📝 Ejemplo de Uso con cURL:</h4>
-  <pre>
-# Obtener productos paginados
-curl -H "X-API-Key: {$api_key}" "{$api_url}/api/v1/products?page=1&limit=10"
-
-# Obtener producto específico
-curl -H "X-API-Key: {$api_key}" "{$api_url}/api/v1/products/123"
-
-# Obtener imágenes de producto
-curl -H "X-API-Key: {$api_key}" "{$api_url}/api/v1/products/123/images"
-
-# Crear producto
-curl -X POST -H "X-API-Key: {$api_key}" -H "Content-Type: application/json" \
-  -d '{ldelim}"name":"Nuevo Producto","price":29.99,"stock":50{rdelim}' \
-  "{$api_url}/api/v1/products"
-  </pre>
-
-  <div class="alert alert-success">
-    <strong>💡 Tip:</strong> Todos los endpoints soportan CORS y pueden ser consumidos desde aplicaciones web frontend.
-  </div>
+  <!-- ✅ ENLACES ÚTILES -->
+  <h4><i class="icon icon-link"></i> Enlaces Útiles</h4>
+  <ul class="list-group">
+    <li class="list-group-item">
+      <i class="icon icon-external-link"></i>
+      <a href="{$api_url}/../docs" target="_blank">Documentación Interactiva API</a>
+    </li>
+    <li class="list-group-item">
+      <i class="icon icon-external-link"></i>
+      <a href="{$link->getAdminLink('AdminMyApiClients')}">Panel de Gestión de Clientes</a>
+    </li>
+    <li class="list-group-item">
+      <i class="icon icon-external-link"></i>
+      <a href="{$api_url}?page=1&limit=5" target="_blank">Probar Endpoint de Productos</a>
+    </li>
+  </ul>
 </div>

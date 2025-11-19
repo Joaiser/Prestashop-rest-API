@@ -1,11 +1,10 @@
 <?php
 
-class AdminMyApiController extends ModuleAdminController // CAMBIADO el nombre
+class AdminMyApiController extends ModuleAdminController
 {
   public function __construct()
   {
     $this->bootstrap = true;
-    $this->display = 'view';
     parent::__construct();
 
     if (!$this->module->active) {

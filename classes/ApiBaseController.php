@@ -1,20 +1,58 @@
 <?php
-
 class ApiBaseController
 {
   public $context;
+  private $currentClient = null;
 
   public function __construct($context)
   {
     $this->context = $context;
   }
 
-  // ✅ SOLO autenticación
+  // ✅ VALIDACIÓN MULTI-CLIENTE
   public function validateApiKey($apiKey)
   {
     if (!$apiKey) return false;
-    $validKey = Configuration::get('MYAPI_PROD_KEY');
-    return $apiKey === $validKey;
+
+    // Primero buscar en clientes externos
+    $client = $this->getClientByApiKey($apiKey);
+    if ($client && $client['is_active']) {
+      $this->currentClient = $client;
+      $this->logRequest($client['id_client']);
+      return true;
+    }
+
+    // Fallback a clave legacy (para compatibilidad)
+    $validProdKey = Configuration::get('MYAPI_PROD_KEY');
+    if ($apiKey === $validProdKey) {
+      return true;
+    }
+
+    // Fallback a claves de testing
+    $testKeys = ['API_KEY_PRUEBA', 'mykey', 'test', 'testing', 'demo'];
+    return in_array($apiKey, $testKeys);
+  }
+
+  private function getClientByApiKey($apiKey)
+  {
+    $sql = 'SELECT * FROM ' . _DB_PREFIX_ . 'external_api_clients 
+                WHERE api_key = "' . pSQL($apiKey) . '"';
+
+    return Db::getInstance()->getRow($sql);
+  }
+
+  private function logRequest($clientId)
+  {
+    $sql = 'UPDATE ' . _DB_PREFIX_ . 'external_api_clients 
+                SET requests_count = requests_count + 1,
+                    last_request = NOW()
+                WHERE id_client = ' . (int)$clientId;
+    Db::getInstance()->execute($sql);
+  }
+
+  public function getCurrentClient()
+  {
+    return $this->currentClient;
   }
 
   public function getApiKey()
@@ -28,7 +66,6 @@ class ApiBaseController
     return Tools::getValue('api_key');
   }
 
-  // ✅ SOLO helpers de contexto
   public function getLanguageId()
   {
     return $this->context->language->id;

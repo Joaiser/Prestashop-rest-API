@@ -33,8 +33,9 @@ class MyApiApidocsModuleFrontController extends ModuleFrontController
     }
 
     $this->renderSwaggerUI($this->getOpenAPISpec());
-    exit; // ← IMPORTANTE: evitar que PrestaShop continúe
+    exit;
   }
+
   private function getOpenAPISpec()
   {
     $apiUrl = _PS_BASE_URL_ . __PS_BASE_URI__;
@@ -44,10 +45,14 @@ class MyApiApidocsModuleFrontController extends ModuleFrontController
       'info' => [
         'title' => 'Salamandra Luz API',
         'description' => 'API completa para gestión de productos y categorías',
-        'version' => '1.0.0'
+        'version' => '1.0.0',
+        'contact' => [
+          'name' => 'Soporte API',
+          'email' => 'soporte@salamandraluz.net'
+        ]
       ],
       'servers' => [
-        ['url' => $apiUrl, 'description' => 'Servidor principal']
+        ['url' => 'https://test6.salamandraluz.net', 'description' => 'Servidor principal HTTPS']
       ],
       'paths' => $this->getPaths(),
       'components' => [
@@ -55,10 +60,56 @@ class MyApiApidocsModuleFrontController extends ModuleFrontController
           'ApiKeyAuth' => [
             'type' => 'apiKey',
             'in' => 'header',
-            'name' => 'X-API-Key'
+            'name' => 'X-API-Key',
+            'description' => 'Claves de testing: API_KEY_PRUEBA, mykey, test, testing, demo'
           ]
         ],
-        'schemas' => $this->getSchemas()
+        'schemas' => $this->getSchemas(),
+        // ✅ AÑADE ESTOS RESPONSES QUE FALTAN:
+        'responses' => [
+          'Unauthorized' => [
+            'description' => 'API Key inválida o faltante',
+            'content' => [
+              'application/json' => [
+                'schema' => [
+                  'type' => 'object',
+                  'properties' => [
+                    'status' => ['type' => 'string', 'example' => 'error'],
+                    'error' => ['type' => 'string', 'example' => 'API Key inválida']
+                  ]
+                ]
+              ]
+            ]
+          ],
+          'NotFound' => [
+            'description' => 'Recurso no encontrado',
+            'content' => [
+              'application/json' => [
+                'schema' => [
+                  'type' => 'object',
+                  'properties' => [
+                    'status' => ['type' => 'string', 'example' => 'error'],
+                    'error' => ['type' => 'string', 'example' => 'Recurso no encontrado']
+                  ]
+                ]
+              ]
+            ]
+          ],
+          'ServerError' => [
+            'description' => 'Error interno del servidor',
+            'content' => [
+              'application/json' => [
+                'schema' => [
+                  'type' => 'object',
+                  'properties' => [
+                    'status' => ['type' => 'string', 'example' => 'error'],
+                    'error' => ['type' => 'string', 'example' => 'Error interno del servidor']
+                  ]
+                ]
+              ]
+            ]
+          ]
+        ]
       ]
     ];
   }
@@ -66,25 +117,85 @@ class MyApiApidocsModuleFrontController extends ModuleFrontController
   private function getPaths()
   {
     return [
+      // ========== PRODUCTOS ==========
       '/api/v1/products' => [
         'get' => [
-          'summary' => 'Listar productos',
-          'description' => 'Obtiene lista paginada de productos',
+          'summary' => 'Listar productos paginados',
+          'description' => 'Obtiene lista paginada de productos con stock, imágenes y categorías',
+          'security' => [['ApiKeyAuth' => []]],
           'parameters' => [
             [
               'name' => 'page',
               'in' => 'query',
-              'schema' => ['type' => 'integer', 'default' => 1]
+              'schema' => ['type' => 'integer', 'default' => 1, 'minimum' => 1],
+              'description' => 'Número de página'
             ],
             [
               'name' => 'limit',
               'in' => 'query',
-              'schema' => ['type' => 'integer', 'default' => 50]
+              'schema' => ['type' => 'integer', 'default' => 50, 'minimum' => 1, 'maximum' => 100],
+              'description' => 'Productos por página (máx. 100)'
             ]
           ],
           'responses' => [
             '200' => [
-              'description' => 'Lista de productos',
+              'description' => 'Lista de productos paginada',
+              'content' => [
+                'application/json' => [
+                  'schema' => [
+                    'type' => 'object',
+                    'properties' => [
+                      'status' => ['type' => 'string', 'example' => 'success'],
+                      'data' => [
+                        'type' => 'object',
+                        'properties' => [
+                          'products' => [
+                            'type' => 'array',
+                            'items' => ['$ref' => '#/components/schemas/Product']
+                          ],
+                          'pagination' => ['$ref' => '#/components/schemas/Pagination']
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ],
+            '401' => ['$ref' => '#/components/responses/Unauthorized'],
+            '500' => ['$ref' => '#/components/responses/ServerError']
+          ]
+        ],
+        'post' => [
+          'summary' => 'Crear nuevo producto',
+          'description' => 'Crea un nuevo producto en el catálogo',
+          'security' => [['ApiKeyAuth' => []]],
+          'requestBody' => [
+            'required' => true,
+            'content' => [
+              'application/json' => [
+                'schema' => [
+                  'type' => 'object',
+                  'required' => ['name', 'reference', 'price'],
+                  'properties' => [
+                    'name' => ['type' => 'string', 'example' => 'Mi Producto'],
+                    'reference' => ['type' => 'string', 'example' => 'REF-001'],
+                    'price' => ['type' => 'number', 'example' => 29.99],
+                    'description' => ['type' => 'string'],
+                    'active' => ['type' => 'boolean', 'default' => true],
+                    'stock' => ['type' => 'integer', 'default' => 0],
+                    'categories' => [
+                      'type' => 'array',
+                      'items' => ['type' => 'integer'],
+                      'example' => [2, 5]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          'responses' => [
+            '201' => [
+              'description' => 'Producto creado exitosamente',
               'content' => [
                 'application/json' => [
                   'schema' => [
@@ -94,10 +205,10 @@ class MyApiApidocsModuleFrontController extends ModuleFrontController
                       'data' => [
                         'type' => 'object',
                         'properties' => [
-                          'products' => [
-                            'type' => 'array',
-                            'items' => ['$ref' => '#/components/schemas/Product']
-                          ]
+                          'id' => ['type' => 'integer'],
+                          'name' => ['type' => 'string'],
+                          'reference' => ['type' => 'string'],
+                          'message' => ['type' => 'string']
                         ]
                       ]
                     ]
@@ -112,17 +223,20 @@ class MyApiApidocsModuleFrontController extends ModuleFrontController
       '/api/v1/products/{id}' => [
         'get' => [
           'summary' => 'Obtener producto específico',
+          'description' => 'Obtiene todos los detalles de un producto específico incluyendo imágenes y categorías',
+          'security' => [['ApiKeyAuth' => []]],
           'parameters' => [
             [
               'name' => 'id',
               'in' => 'path',
               'required' => true,
-              'schema' => ['type' => 'integer']
+              'schema' => ['type' => 'integer'],
+              'description' => 'ID del producto'
             ]
           ],
           'responses' => [
             '200' => [
-              'description' => 'Detalles del producto',
+              'description' => 'Detalles completos del producto',
               'content' => [
                 'application/json' => [
                   'schema' => [
@@ -134,14 +248,45 @@ class MyApiApidocsModuleFrontController extends ModuleFrontController
                   ]
                 ]
               ]
-            ]
+            ],
+            '404' => ['$ref' => '#/components/responses/NotFound']
           ]
-        ]
-      ],
-
-      '/api/v1/products/{id}/images' => [
-        'get' => [
-          'summary' => 'Obtener imágenes del producto',
+        ],
+        'put' => [
+          'summary' => 'Actualizar producto',
+          'security' => [['ApiKeyAuth' => []]],
+          'parameters' => [
+            [
+              'name' => 'id',
+              'in' => 'path',
+              'required' => true,
+              'schema' => ['type' => 'integer']
+            ]
+          ],
+          'requestBody' => [
+            'content' => [
+              'application/json' => [
+                'schema' => [
+                  'type' => 'object',
+                  'properties' => [
+                    'name' => ['type' => 'string'],
+                    'price' => ['type' => 'number'],
+                    'reference' => ['type' => 'string'],
+                    'description' => ['type' => 'string'],
+                    'active' => ['type' => 'boolean'],
+                    'stock' => ['type' => 'integer']
+                  ]
+                ]
+              ]
+            ]
+          ],
+          'responses' => [
+            '200' => ['description' => 'Producto actualizado']
+          ]
+        ],
+        'delete' => [
+          'summary' => 'Eliminar producto',
+          'security' => [['ApiKeyAuth' => []]],
           'parameters' => [
             [
               'name' => 'id',
@@ -151,8 +296,28 @@ class MyApiApidocsModuleFrontController extends ModuleFrontController
             ]
           ],
           'responses' => [
+            '200' => ['description' => 'Producto eliminado']
+          ]
+        ]
+      ],
+
+      '/api/v1/products/{id}/images' => [
+        'get' => [
+          'summary' => 'Obtener imágenes del producto',
+          'description' => 'Obtiene todas las imágenes del producto en diferentes tamaños',
+          'security' => [['ApiKeyAuth' => []]],
+          'parameters' => [
+            [
+              'name' => 'id',
+              'in' => 'path',
+              'required' => true,
+              'schema' => ['type' => 'integer'],
+              'description' => 'ID del producto'
+            ]
+          ],
+          'responses' => [
             '200' => [
-              'description' => 'Imágenes del producto',
+              'description' => 'Lista de imágenes del producto',
               'content' => [
                 'application/json' => [
                   'schema' => [
@@ -162,6 +327,103 @@ class MyApiApidocsModuleFrontController extends ModuleFrontController
                       'data' => [
                         'type' => 'array',
                         'items' => ['$ref' => '#/components/schemas/ProductImage']
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        ]
+      ],
+
+      '/api/v1/products/featured' => [
+        'get' => [
+          'summary' => 'Productos destacados',
+          'description' => 'Obtiene productos destacados, en oferta o nuevos',
+          'security' => [['ApiKeyAuth' => []]],
+          'responses' => [
+            '200' => [
+              'description' => 'Lista de productos destacados',
+              'content' => [
+                'application/json' => [
+                  'schema' => [
+                    'type' => 'object',
+                    'properties' => [
+                      'status' => ['type' => 'string'],
+                      'data' => [
+                        'type' => 'array',
+                        'items' => ['$ref' => '#/components/schemas/Product']
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        ]
+      ],
+
+      // ========== CATEGORÍAS ==========
+      '/api/v1/categories' => [
+        'get' => [
+          'summary' => 'Listar todas las categorías',
+          'description' => 'Obtiene todas las categorías activas con conteo de productos',
+          'security' => [['ApiKeyAuth' => []]],
+          'responses' => [
+            '200' => [
+              'description' => 'Lista de categorías',
+              'content' => [
+                'application/json' => [
+                  'schema' => [
+                    'type' => 'object',
+                    'properties' => [
+                      'status' => ['type' => 'string'],
+                      'data' => [
+                        'type' => 'array',
+                        'items' => ['$ref' => '#/components/schemas/Category']
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        ]
+      ],
+
+      '/api/v1/categories/{id}/products' => [
+        'get' => [
+          'summary' => 'Productos por categoría',
+          'description' => 'Obtiene todos los productos de una categoría específica',
+          'security' => [['ApiKeyAuth' => []]],
+          'parameters' => [
+            [
+              'name' => 'id',
+              'in' => 'path',
+              'required' => true,
+              'schema' => ['type' => 'integer'],
+              'description' => 'ID de la categoría'
+            ]
+          ],
+          'responses' => [
+            '200' => [
+              'description' => 'Categoría y sus productos',
+              'content' => [
+                'application/json' => [
+                  'schema' => [
+                    'type' => 'object',
+                    'properties' => [
+                      'status' => ['type' => 'string'],
+                      'data' => [
+                        'type' => 'object',
+                        'properties' => [
+                          'category' => ['$ref' => '#/components/schemas/Category'],
+                          'products' => [
+                            'type' => 'array',
+                            'items' => ['$ref' => '#/components/schemas/Product']
+                          ]
+                        ]
                       ]
                     ]
                   ]
@@ -180,12 +442,13 @@ class MyApiApidocsModuleFrontController extends ModuleFrontController
       'Product' => [
         'type' => 'object',
         'properties' => [
-          'id' => ['type' => 'integer'],
-          'name' => ['type' => 'string'],
-          'price' => ['type' => 'number'],
-          'reference' => ['type' => 'string'],
-          'active' => ['type' => 'boolean'],
-          'stock' => ['type' => 'integer']
+          'id' => ['type' => 'integer', 'example' => 1],
+          'name' => ['type' => 'string', 'example' => 'Lámpara de Mesa Moderna'],
+          'price' => ['type' => 'number', 'example' => 89.99],
+          'reference' => ['type' => 'string', 'example' => 'LAMP-001'],
+          'active' => ['type' => 'boolean', 'example' => true],
+          'stock' => ['type' => 'integer', 'example' => 25],
+          'description' => ['type' => 'string']
         ]
       ],
       'ProductDetailed' => [
@@ -194,18 +457,33 @@ class MyApiApidocsModuleFrontController extends ModuleFrontController
           'id' => ['type' => 'integer'],
           'name' => ['type' => 'string'],
           'price' => ['type' => 'number'],
+          'reference' => ['type' => 'string'],
+          'active' => ['type' => 'boolean'],
+          'stock' => ['type' => 'integer'],
+          'description' => ['type' => 'string'],
           'images' => [
             'type' => 'array',
             'items' => ['$ref' => '#/components/schemas/ProductImage']
           ],
-          'categories' => ['type' => 'array', 'items' => ['type' => 'integer']]
+          'categories' => [
+            'type' => 'array',
+            'items' => ['type' => 'integer'],
+            'example' => [2, 5, 8]
+          ],
+          'manufacturer' => ['type' => 'string'],
+          'features' => [
+            'type' => 'array',
+            'items' => ['type' => 'object']
+          ]
         ]
       ],
       'ProductImage' => [
         'type' => 'object',
         'properties' => [
-          'id' => ['type' => 'integer'],
-          'cover' => ['type' => 'boolean'],
+          'id' => ['type' => 'integer', 'example' => 123],
+          'position' => ['type' => 'integer', 'example' => 1],
+          'cover' => ['type' => 'boolean', 'example' => true],
+          'legend' => ['type' => 'string', 'example' => 'Lámpara vista frontal'],
           'sizes' => [
             'type' => 'object',
             'additionalProperties' => [
@@ -217,6 +495,30 @@ class MyApiApidocsModuleFrontController extends ModuleFrontController
               ]
             ]
           ]
+        ]
+      ],
+      'Category' => [
+        'type' => 'object',
+        'properties' => [
+          'id' => ['type' => 'integer', 'example' => 5],
+          'name' => ['type' => 'string', 'example' => 'Lámparas de Interior'],
+          'description' => ['type' => 'string'],
+          'link_rewrite' => ['type' => 'string', 'example' => 'lamparas-interior'],
+          'active' => ['type' => 'boolean', 'example' => true],
+          'position' => ['type' => 'integer', 'example' => 2],
+          'parent_id' => ['type' => 'integer', 'example' => 3],
+          'products_count' => ['type' => 'integer', 'example' => 45]
+        ]
+      ],
+      'Pagination' => [
+        'type' => 'object',
+        'properties' => [
+          'current_page' => ['type' => 'integer', 'example' => 1],
+          'per_page' => ['type' => 'integer', 'example' => 50],
+          'total_products' => ['type' => 'integer', 'example' => 125],
+          'total_pages' => ['type' => 'integer', 'example' => 3],
+          'has_next' => ['type' => 'boolean', 'example' => true],
+          'has_prev' => ['type' => 'boolean', 'example' => false]
         ]
       ]
     ];
@@ -231,13 +533,15 @@ class MyApiApidocsModuleFrontController extends ModuleFrontController
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Salamandra Luz API - Documentación</title>
+    <title>Salamandra Luz API - Documentación Completa</title>
     <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@3/swagger-ui.css" />
     <style>
         html { box-sizing: border-box; overflow: -moz-scrollbars-vertical; overflow-y: scroll; }
         *, *:before, *:after { box-sizing: inherit; }
         body { margin: 0; background: #fafafa; }
         #swagger-ui { padding: 20px; }
+        .swagger-ui .info .title { color: #e74c3c; }
+        .swagger-ui .btn.authorize { background-color: #e74c3c; border-color: #e74c3c; }
     </style>
 </head>
 <body>
@@ -246,7 +550,6 @@ class MyApiApidocsModuleFrontController extends ModuleFrontController
     <script src="https://unpkg.com/swagger-ui-dist@3/swagger-ui-bundle.js"></script>
     <script>
         window.onload = function() {
-            // ✅ CONFIGURACIÓN SIMPLE - sin layouts complejos
             SwaggerUIBundle({
                 spec: $specJson,
                 dom_id: '#swagger-ui',
@@ -254,7 +557,14 @@ class MyApiApidocsModuleFrontController extends ModuleFrontController
                 presets: [
                     SwaggerUIBundle.presets.apis
                 ],
-                layout: "BaseLayout" // ✅ Layout por defecto que SÍ existe
+                layout: "BaseLayout",
+                requestInterceptor: function(request) {
+                    // Auto-add API key for testing
+                    if (!request.headers['X-API-Key']) {
+                        request.headers['X-API-Key'] = 'API_KEY_PRUEBA';
+                    }
+                    return request;
+                }
             });
         }
     </script>
