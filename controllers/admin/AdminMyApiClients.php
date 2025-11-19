@@ -240,7 +240,7 @@ class AdminMyApiClientsController extends ModuleAdminController
     return parent::renderOptions();
   }
 
-  // ✅ PROCESAR REGENERACIÓN DE KEYS
+  // ✅ PROCESAR REGENERACIÓN DE KEYS - VERSIÓN MEJORADA
   public function processRegenerateKeys()
   {
     if (Tools::isSubmit('regenerateKeys')) {
@@ -250,10 +250,12 @@ class AdminMyApiClientsController extends ModuleAdminController
         if (Validate::isLoadedObject($client)) {
           $client->api_key = 'SALAMANDRA_' . bin2hex(random_bytes(16));
           $client->secret_key = bin2hex(random_bytes(32));
-          $client->updated_at = date('Y-m-d H:i:s');
+          $client->updated_at = date('Y-m-d');
 
           if ($client->save()) {
             $this->confirmations[] = $this->l('Keys regeneradas correctamente');
+            // ✅ REDIRIGIR PARA EVITAR REENVÍO DEL FORMULARIO
+            Tools::redirectAdmin(self::$currentIndex . '&id_client=' . $clientId . '&update' . $this->table . '&conf=4&token=' . $this->token);
           } else {
             $this->errors[] = $this->l('Error al regenerar keys');
           }
@@ -262,22 +264,29 @@ class AdminMyApiClientsController extends ModuleAdminController
     }
   }
 
+  public function processUpdate()
+  {
+    // ✅ PROCESAR REGENERACIÓN PRIMERO
+    $this->processRegenerateKeys();
+
+    // ✅ SI NO SE REGENERÓ, ACTUALIZAR NORMAL
+    if (!Tools::isSubmit('regenerateKeys')) {
+      $_POST['updated_at'] = date('Y-m-d');
+      return parent::processUpdate();
+    }
+
+    return true;
+  }
+
   public function processAdd()
   {
     // Generar API Key automáticamente
     $_POST['api_key'] = 'SALAMANDRA_' . bin2hex(random_bytes(16));
     $_POST['secret_key'] = bin2hex(random_bytes(32));
-    $_POST['created_at'] = date('Y-m-d H:i:s');
-    $_POST['updated_at'] = date('Y-m-d H:i:s');
+    $_POST['created_at'] = date('Y-m-d');
+    $_POST['updated_at'] = date('Y-m-d');
 
     return parent::processAdd();
-  }
-
-  public function processUpdate()
-  {
-    $this->processRegenerateKeys(); // Procesar regeneración si se pulsó el botón
-    $_POST['updated_at'] = date('Y-m-d H:i:s');
-    return parent::processUpdate();
   }
 
   public function maskApiKey($key, $row)
