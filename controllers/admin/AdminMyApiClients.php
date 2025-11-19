@@ -172,6 +172,13 @@ class AdminMyApiClientsController extends ModuleAdminController
   {
     parent::initPageHeaderToolbar();
 
+    // ✅ BOTÓN PARA IR A CONFIGURACIÓN PRINCIPAL
+    $this->page_header_toolbar_btn['main_config'] = [
+      'href' => $this->context->link->getAdminLink('AdminMyApi'),
+      'desc' => $this->l('Configuración Principal'),
+      'icon' => 'process-icon-cogs'
+    ];
+
     if (empty($this->display) || $this->display == 'list') {
       $this->page_header_toolbar_btn['new_api_client'] = [
         'href' => self::$currentIndex . '&add' . $this->table . '&token=' . $this->token,
