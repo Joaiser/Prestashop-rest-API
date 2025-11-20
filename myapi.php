@@ -42,7 +42,6 @@ class MyApi extends Module
     if (!$this->createClientsTable()) return false;
     return $this->installTabs() && Configuration::updateValue('MYAPI_PROD_KEY', 'TEST_KEY_PARA_DESARROLLO');
   }
-
   private function createClientsTable()
   {
     $sql = 'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'external_api_clients` (
@@ -59,6 +58,7 @@ class MyApi extends Module
             `webhook_url` VARCHAR(500) NULL,
             `allowed_fields` TEXT NULL,
             `allowed_endpoints` TEXT NULL,
+            `allowed_origins` TEXT NULL, 
             `created_at` DATETIME NOT NULL,
             `updated_at` DATETIME NOT NULL,
             PRIMARY KEY (`id_client`)

@@ -1,5 +1,4 @@
 <?php
-
 class ApiClient extends ObjectModel
 {
   public $id_client;
@@ -15,6 +14,7 @@ class ApiClient extends ObjectModel
   public $webhook_url;
   public $allowed_fields;
   public $allowed_endpoints;
+  public $allowed_origins;
   public $created_at;
   public $updated_at;
 
@@ -32,11 +32,9 @@ class ApiClient extends ObjectModel
       'requests_count' => ['type' => self::TYPE_INT, 'validate' => 'isUnsignedInt'],
       'last_request' => ['type' => self::TYPE_DATE, 'validate' => 'isDate'],
       'webhook_url' => ['type' => self::TYPE_STRING, 'validate' => 'isUrl', 'size' => 500],
-
-      // ✅ AÑADIR LOS NUEVOS CAMPOS
       'allowed_fields' => ['type' => self::TYPE_STRING, 'validate' => 'isJson'],
       'allowed_endpoints' => ['type' => self::TYPE_STRING, 'validate' => 'isJson'],
-
+      'allowed_origins' => ['type' => self::TYPE_STRING, 'validate' => 'isJson'],  // ✅ NUEVO
       'created_at' => ['type' => self::TYPE_DATE, 'validate' => 'isDate', 'required' => true],
       'updated_at' => ['type' => self::TYPE_DATE, 'validate' => 'isDate', 'required' => true],
     ],
@@ -52,6 +50,9 @@ class ApiClient extends ObjectModel
     }
     if ($this->id && empty($this->allowed_fields)) {
       $this->allowed_fields = '[]';
+    }
+    if ($this->id && empty($this->allowed_origins)) {
+      $this->allowed_origins = '[]';
     }
   }
 }

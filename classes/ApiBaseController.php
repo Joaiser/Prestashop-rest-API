@@ -139,7 +139,7 @@ class ApiBaseController
     return $client;
   }
 
-  private function getClientByApiKey($apiKey)
+  public function getClientByApiKey($apiKey)
   {
     $sql = 'SELECT * FROM ' . _DB_PREFIX_ . 'external_api_clients 
                 WHERE api_key = "' . pSQL($apiKey) . '"';

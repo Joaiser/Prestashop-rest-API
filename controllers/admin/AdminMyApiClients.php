@@ -167,6 +167,16 @@ class AdminMyApiClientsController extends ModuleAdminController
         'default' => 1000,
         'hint' => $this->l('Máximo número de peticiones por hora')
       ],
+      // ✅ NUEVO: DOMINIOS CORS PERMITIDOS
+      [
+        'type' => 'textarea',
+        'label' => $this->l('Dominios permitidos (CORS)'),
+        'name' => 'allowed_origins',
+        'cols' => 40,
+        'rows' => 3,
+        'hint' => $this->l('Un dominio por línea. Ej: https://midominio.com. Dejar vacío para denegar todos.'),
+        'placeholder' => "https://cliente1.com\nhttps://cliente2.com\nhttps://*.cliente3.com"
+      ],
       // ENDPOINTS PERMITIDOS
       [
         'type' => 'checkbox',
@@ -251,6 +261,8 @@ class AdminMyApiClientsController extends ModuleAdminController
     return parent::renderForm();
   }
 
+
+
   protected function getEndpointsForCheckboxes()
   {
     $endpoints = $this->module->getAvailableEndpoints();
@@ -291,7 +303,7 @@ class AdminMyApiClientsController extends ModuleAdminController
     $values = parent::getFieldsValue($obj);
 
     if ($obj && $obj->id) {
-      // ✅ CARGAR ENDPOINTS PERMITIDOS - CON VALIDACIÓN
+      // ✅ CARGAR ENDPOINTS PERMITIDOS
       $allowedEndpoints = [];
       if (!empty($obj->allowed_endpoints)) {
         $allowedEndpoints = json_decode($obj->allowed_endpoints, true) ?: [];
@@ -301,7 +313,7 @@ class AdminMyApiClientsController extends ModuleAdminController
         $values['allowed_endpoints_' . $endpoint] = true;
       }
 
-      // ✅ CARGAR CAMPOS PERMITIDOS - CON VALIDACIÓN
+      // ✅ CARGAR CAMPOS PERMITIDOS
       $allowedFields = [];
       if (!empty($obj->allowed_fields)) {
         $allowedFields = json_decode($obj->allowed_fields, true) ?: [];
@@ -311,6 +323,12 @@ class AdminMyApiClientsController extends ModuleAdminController
         foreach ($fields as $field) {
           $values['allowed_fields_' . $endpoint . '_' . $field] = true;
         }
+      }
+
+      // ✅ NUEVO: CARGAR DOMINIOS CORS
+      if (!empty($obj->allowed_origins)) {
+        $allowedOrigins = json_decode($obj->allowed_origins, true) ?: [];
+        $values['allowed_origins'] = implode("\n", $allowedOrigins);
       }
     }
 
@@ -329,7 +347,6 @@ class AdminMyApiClientsController extends ModuleAdminController
       }
     }
 
-    // ✅ ASEGURAR QUE SIEMPRE SEA JSON VÁLIDO, NO NULL
     $_POST['allowed_endpoints'] = !empty($allowedEndpoints) ? json_encode($allowedEndpoints) : '[]';
 
     // Procesar campos
@@ -347,6 +364,21 @@ class AdminMyApiClientsController extends ModuleAdminController
     }
 
     $_POST['allowed_fields'] = !empty($allowedFields) ? json_encode($allowedFields) : '[]';
+
+    // ✅ NUEVO: Procesar dominios CORS
+    $allowedOrigins = Tools::getValue('allowed_origins');
+    if (!empty($allowedOrigins)) {
+      $allowedOrigins = Tools::getValue('allowed_origins');
+      $allowedOrigins = stripslashes($allowedOrigins); // ⬅️ QUITAR BARRAS INVERTIDAS
+      if (!empty($allowedOrigins)) {
+        $originsArray = array_filter(array_map('trim', explode("\n", $allowedOrigins)));
+        $_POST['allowed_origins'] = json_encode($originsArray, JSON_UNESCAPED_SLASHES);
+      } else {
+        $_POST['allowed_origins'] = '[]';
+      }
+    } else {
+      $_POST['allowed_origins'] = '[]';
+    }
   }
 
   // ✅ RENDERIZAR CAMPO API KEY CON BOTÓN COPIAR EN EL FORMULARIO - LIMPIO

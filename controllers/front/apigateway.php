@@ -10,24 +10,47 @@ class MyApiApigatewayModuleFrontController extends ModuleFrontController
   public function __construct()
   {
     parent::__construct();
-    $this->auth = false;
-    $this->guestAllowed = true;
+    // ✅ FORMA CORRECTA EN PRESTASHOP
+    $this->ajax = true;
+    $this->content_only = true;
     $this->apiBase = new ApiBaseController($this->context);
   }
 
   public function init()
   {
-    $this->auth = false;
-    $this->guestAllowed = true;
 
     header('Content-Type: application/json');
-    header('Access-Control-Allow-Origin: *');
+
+    // ✅ CORS DINÁMICO POR CLIENTE
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+    $apiKey = $this->apiBase->getApiKey();
+    $client = $this->apiBase->getClientByApiKey($apiKey);
+
+    // ✅ PERMITIR SIEMPRE EL MISMO ORIGEN (tu tienda)
+    $shopDomain = Tools::getShopDomain(true);
+    if ($origin === $shopDomain) {
+      header('Access-Control-Allow-Origin: ' . $origin);
+    }
+    // ✅ PERMITIR ORIGENES DEL CLIENTE
+    else if ($client && !empty($client['allowed_origins'])) {
+      $allowedOrigins = json_decode($client['allowed_origins'], true);
+
+      foreach ($allowedOrigins as $allowedOrigin) {
+        $pattern = '/^' . str_replace('\*', '.*', preg_quote($allowedOrigin, '/')) . '$/';
+        if ($origin === $allowedOrigin || preg_match($pattern, $origin)) {
+          header('Access-Control-Allow-Origin: ' . $origin);
+          break;
+        }
+      }
+    }
+
     header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
     header('Access-Control-Allow-Headers: Content-Type, Authorization, X-API-Key');
 
     if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
       exit;
     }
+
     parent::init();
   }
 
