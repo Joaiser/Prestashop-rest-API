@@ -1,4 +1,6 @@
 <?php
+
+
 class AdminMyApiClientsController extends ModuleAdminController
 {
   public function __construct()
@@ -13,7 +15,13 @@ class AdminMyApiClientsController extends ModuleAdminController
     $this->identifier = 'id_client';
     $this->lang = false;
 
+
+
     parent::__construct();
+
+    if (!$this->module) {
+      $this->module = Module::getInstanceByName('myapi');
+    }
 
     $this->fields_list = [
       'id_client' => [
@@ -34,6 +42,12 @@ class AdminMyApiClientsController extends ModuleAdminController
         'title' => 'API Key',
         'width' => 'auto',
         'callback' => 'maskApiKey',
+        'search' => false
+      ],
+      'allowed_endpoints' => [
+        'title' => 'Endpoints',
+        'width' => 'auto',
+        'callback' => 'formatEndpoints',
         'search' => false
       ],
       'is_active' => [
@@ -110,63 +124,115 @@ class AdminMyApiClientsController extends ModuleAdminController
 
   public function renderForm()
   {
+    $availableEndpoints = $this->module->getAvailableEndpoints();
+
+    // CONSTRUIR INPUTS DINÁMICAMENTE
+    $inputs = [
+      [
+        'type' => 'text',
+        'label' => $this->l('Nombre del cliente'),
+        'name' => 'client_name',
+        'required' => true,
+        'col' => 6,
+        'hint' => $this->l('Nombre identificativo del cliente')
+      ],
+      [
+        'type' => 'text',
+        'label' => $this->l('Empresa'),
+        'name' => 'company',
+        'col' => 6,
+        'hint' => $this->l('Nombre de la empresa del cliente')
+      ],
+      [
+        'type' => 'text',
+        'label' => $this->l('Email de contacto'),
+        'name' => 'email',
+        'col' => 6,
+        'hint' => $this->l('Email para notificaciones')
+      ],
+      [
+        'type' => 'textarea',
+        'label' => $this->l('Webhook URL'),
+        'name' => 'webhook_url',
+        'col' => 6,
+        'rows' => 3,
+        'hint' => $this->l('URL para notificar cambios de productos (opcional)')
+      ],
+      [
+        'type' => 'text',
+        'label' => $this->l('Límite de peticiones/hora'),
+        'name' => 'rate_limit',
+        'col' => 3,
+        'suffix' => $this->l('peticiones/hora'),
+        'default' => 1000,
+        'hint' => $this->l('Máximo número de peticiones por hora')
+      ],
+      // ENDPOINTS PERMITIDOS
+      [
+        'type' => 'checkbox',
+        'label' => $this->l('Endpoints permitidos'),
+        'name' => 'allowed_endpoints',
+        'values' => [
+          'query' => $this->getEndpointsForCheckboxes(),
+          'id' => 'id',
+          'name' => 'name'
+        ],
+        'expand' => [
+          'print_total' => count($availableEndpoints),
+          'default' => 'show',
+          'show' => ['text' => $this->l('mostrar'), 'icon' => 'plus-sign-alt'],
+          'hide' => ['text' => $this->l('ocultar'), 'icon' => 'minus-sign-alt']
+        ],
+        'hint' => $this->l('Selecciona los endpoints a los que puede acceder este cliente')
+      ],
+      // SEPARADOR
+      [
+        'type' => 'free',
+        'name' => 'fields_separator',
+        'col' => 12,
+        'html_content' => '<hr><h4>' . $this->l('Campos permitidos por endpoint') . '</h4><p class="help-block">' . $this->l('Selecciona los campos específicos para cada endpoint') . '</p>'
+      ]
+    ];
+
+    // AÑADIR CAMPOS POR CADA ENDPOINT
+    foreach ($availableEndpoints as $endpointKey => $endpointData) {
+      $inputs[] = [
+        'type' => 'checkbox',
+        'label' => $endpointData['label'],
+        'name' => 'allowed_fields_' . $endpointKey,
+        'values' => [
+          'query' => $this->getFieldsForCheckboxes($endpointKey),
+          'id' => 'id',
+          'name' => 'name'
+        ],
+        'expand' => [
+          'print_total' => count($endpointData['fields']),
+          'default' => 'hide',
+          'show' => ['text' => $this->l('mostrar campos'), 'icon' => 'plus-sign-alt'],
+          'hide' => ['text' => $this->l('ocultar campos'), 'icon' => 'minus-sign-alt']
+        ]
+      ];
+    }
+
+    // SWITCH ACTIVO
+    $inputs[] = [
+      'type' => 'switch',
+      'label' => $this->l('Activo'),
+      'name' => 'is_active',
+      'required' => false,
+      'is_bool' => true,
+      'values' => [
+        ['id' => 'active_on', 'value' => 1, 'label' => $this->l('Sí')],
+        ['id' => 'active_off', 'value' => 0, 'label' => $this->l('No')]
+      ]
+    ];
+
     $this->fields_form = [
       'legend' => [
         'title' => $this->l('Gestión de Cliente API'),
         'icon' => 'icon-key'
       ],
-      'input' => [
-        [
-          'type' => 'text',
-          'label' => $this->l('Nombre del cliente'),
-          'name' => 'client_name',
-          'required' => true,
-          'col' => 6,
-          'hint' => $this->l('Nombre identificativo del cliente')
-        ],
-        [
-          'type' => 'text',
-          'label' => $this->l('Empresa'),
-          'name' => 'company',
-          'col' => 6,
-          'hint' => $this->l('Nombre de la empresa del cliente')
-        ],
-        [
-          'type' => 'text',
-          'label' => $this->l('Email de contacto'),
-          'name' => 'email',
-          'col' => 6,
-          'hint' => $this->l('Email para notificaciones')
-        ],
-        [
-          'type' => 'textarea',
-          'label' => $this->l('Webhook URL'),
-          'name' => 'webhook_url',
-          'col' => 6,
-          'rows' => 3,
-          'hint' => $this->l('URL para notificar cambios de productos (opcional)')
-        ],
-        [
-          'type' => 'text',
-          'label' => $this->l('Límite de peticiones/hora'),
-          'name' => 'rate_limit',
-          'col' => 3,
-          'suffix' => $this->l('peticiones/hora'),
-          'default' => 1000,
-          'hint' => $this->l('Máximo número de peticiones por hora')
-        ],
-        [
-          'type' => 'switch',
-          'label' => $this->l('Activo'),
-          'name' => 'is_active',
-          'required' => false,
-          'is_bool' => true,
-          'values' => [
-            ['id' => 'active_on', 'value' => 1, 'label' => $this->l('Sí')],
-            ['id' => 'active_off', 'value' => 0, 'label' => $this->l('No')]
-          ]
-        ]
-      ],
+      'input' => $inputs,
       'submit' => [
         'title' => $this->l('Guardar'),
         'class' => 'btn btn-default pull-right'
@@ -183,6 +249,95 @@ class AdminMyApiClientsController extends ModuleAdminController
     ];
 
     return parent::renderForm();
+  }
+
+  protected function getEndpointsForCheckboxes()
+  {
+    $endpoints = $this->module->getAvailableEndpoints();
+    $checkboxData = [];
+
+    foreach ($endpoints as $key => $data) {
+      $checkboxData[] = [
+        'id' => $key,
+        'name' => $data['label'],
+        'val' => $key
+      ];
+    }
+
+    return $checkboxData;
+  }
+
+  protected function getFieldsForCheckboxes($endpoint)
+  {
+    $endpoints = $this->module->getAvailableEndpoints();
+    if (!isset($endpoints[$endpoint])) {
+      return [];
+    }
+
+    $checkboxData = [];
+    foreach ($endpoints[$endpoint]['fields'] as $key => $label) {
+      $checkboxData[] = [
+        'id' => $key,
+        'name' => $label,
+        'val' => $key
+      ];
+    }
+
+    return $checkboxData;
+  }
+
+  public function getFieldsValue($obj)
+  {
+    $values = parent::getFieldsValue($obj);
+
+    if ($obj && $obj->id) {
+      // Cargar endpoints permitidos
+      $allowedEndpoints = json_decode($obj->allowed_endpoints, true) ?: [];
+      foreach ($allowedEndpoints as $endpoint) {
+        $values['allowed_endpoints_' . $endpoint] = true;
+      }
+
+      // Cargar campos permitidos
+      $allowedFields = json_decode($obj->allowed_fields, true) ?: [];
+      foreach ($allowedFields as $endpoint => $fields) {
+        foreach ($fields as $field) {
+          $values['allowed_fields_' . $endpoint . '_' . $field] = true;
+        }
+      }
+    }
+
+    return $values;
+  }
+
+  protected function processPermissions()
+  {
+    // Procesar endpoints
+    $allowedEndpoints = [];
+    $availableEndpoints = $this->module->getAvailableEndpoints();
+
+    foreach (array_keys($availableEndpoints) as $endpoint) {
+      if (Tools::getValue('allowed_endpoints_' . $endpoint)) {
+        $allowedEndpoints[] = $endpoint;
+      }
+    }
+
+    $_POST['allowed_endpoints'] = json_encode($allowedEndpoints);
+
+    // Procesar campos
+    $allowedFields = [];
+    foreach ($availableEndpoints as $endpoint => $endpointData) {
+      $fieldsForEndpoint = [];
+      foreach (array_keys($endpointData['fields']) as $field) {
+        if (Tools::getValue('allowed_fields_' . $endpoint . '_' . $field)) {
+          $fieldsForEndpoint[] = $field;
+        }
+      }
+      if (!empty($fieldsForEndpoint)) {
+        $allowedFields[$endpoint] = $fieldsForEndpoint;
+      }
+    }
+
+    $_POST['allowed_fields'] = json_encode($allowedFields);
   }
 
   // ✅ RENDERIZAR CAMPO API KEY CON BOTÓN COPIAR EN EL FORMULARIO - LIMPIO
@@ -269,6 +424,9 @@ class AdminMyApiClientsController extends ModuleAdminController
     // ✅ PROCESAR REGENERACIÓN PRIMERO
     $this->processRegenerateKeys();
 
+    // ✅ PROCESAR PERMISOS
+    $this->processPermissions();
+
     // ✅ SI NO SE REGENERÓ, ACTUALIZAR NORMAL
     if (!Tools::isSubmit('regenerateKeys')) {
       $_POST['updated_at'] = date('Y-m-d');
@@ -280,6 +438,9 @@ class AdminMyApiClientsController extends ModuleAdminController
 
   public function processAdd()
   {
+    // ✅ PROCESAR PERMISOS
+    $this->processPermissions();
+
     // Generar API Key automáticamente
     $_POST['api_key'] = 'SALAMANDRA_' . bin2hex(random_bytes(16));
     $_POST['secret_key'] = bin2hex(random_bytes(32));
@@ -293,6 +454,40 @@ class AdminMyApiClientsController extends ModuleAdminController
   {
     if (empty($key)) return '-';
     return substr($key, 0, 12) . '...' . substr($key, -8);
+  }
+
+  /**
+   * Formatear endpoints para mostrar en la lista
+   */
+  public function formatEndpoints($endpoints, $row)
+  {
+    if (empty($endpoints)) {
+      return '<span class="badge badge-warning">' . $this->l('Ninguno') . '</span>';
+    }
+
+    $endpoints_array = json_decode($endpoints, true);
+    if (empty($endpoints_array)) {
+      return '<span class="badge badge-warning">' . $this->l('Ninguno') . '</span>';
+    }
+
+    $availableEndpoints = $this->module->getAvailableEndpoints();
+    $endpointLabels = [];
+
+    foreach ($endpoints_array as $endpoint) {
+      if (isset($availableEndpoints[$endpoint])) {
+        $endpointLabels[] = $availableEndpoints[$endpoint]['label'];
+      } else {
+        $endpointLabels[] = $endpoint;
+      }
+    }
+
+    $count = count($endpointLabels);
+    $preview = implode(', ', array_slice($endpointLabels, 0, 2));
+    if ($count > 2) {
+      $preview .= '... (+' . ($count - 2) . ')';
+    }
+
+    return '<span class="badge badge-success" title="' . implode(', ', $endpointLabels) . '">' . $preview . '</span>';
   }
 
   public function initPageHeaderToolbar()

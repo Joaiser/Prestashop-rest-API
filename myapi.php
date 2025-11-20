@@ -57,6 +57,8 @@ class MyApi extends Module
             `requests_count` INT(11) DEFAULT 0,
             `last_request` DATETIME NULL,
             `webhook_url` VARCHAR(500) NULL,
+            `allowed_fields` TEXT NULL,
+            `allowed_endpoints` TEXT NULL,
             `created_at` DATETIME NOT NULL,
             `updated_at` DATETIME NOT NULL,
             PRIMARY KEY (`id_client`)
@@ -140,5 +142,32 @@ class MyApi extends Module
   public function getContent()
   {
     Tools::redirectAdmin($this->context->link->getAdminLink('AdminMyApi'));
+  }
+
+  public function getAvailableEndpoints()
+  {
+    return [
+      'products' => [
+        'label' => 'Productos',
+        'fields' => [
+          'id' => 'ID',
+          'name' => 'Nombre',
+          'description' => 'Descripción',
+          'price' => 'Precio',
+          'reference' => 'Referencia',
+          'quantity' => 'Cantidad',
+          'active' => 'Activo'
+        ]
+      ],
+      'categories' => [
+        'label' => 'Categorías',
+        'fields' => [
+          'id' => 'ID',
+          'name' => 'Nombre',
+          'description' => 'Descripción',
+          'active' => 'Activa'
+        ]
+      ]
+    ];
   }
 }
