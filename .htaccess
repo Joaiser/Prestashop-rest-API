@@ -1,30 +1,7 @@
 COPIAR ESTO AL PRINCIPIO DE HTACCESS DE LA RAIZ DEL PS
 
-# ======== 🚀 NUESTRAS RUTAS API - INYECTADO ========
-# ✅ REDIRIGIR /api/v1/ A NUESTRO MÓDULO - ANTES que las reglas de PrestaShop
 
-# 🎯 RUTAS ESPECÍFICAS PRIMERO (más específicas → menos específicas)
 
-# ✅ /api/v1/docs (DOCUMENTACIÓN - ESPECÍFICA)
-RewriteRule ^api/v1/docs/?$ index.php?fc=module&module=myapi&controller=apidocs [QSA,L]
-
-# ✅ /api/v1/categories/123/products (MUY ESPECÍFICA)
-RewriteRule ^api/v1/categories/([0-9]+)/products/?$ index.php?fc=module&module=myapi&controller=apicategories&id=$1 [QSA,L]
-
-# ✅ /api/v1/categories (ESPECÍFICA)
-RewriteRule ^api/v1/categories/?$ index.php?fc=module&module=myapi&controller=apicategories [QSA,L]
-
-# ✅ /api/v1/products/123/images (ESPECÍFICA)
-RewriteRule ^api/v1/products/([0-9]+)/images/?$ index.php?fc=module&module=myapi&controller=apiproducts&action=images&id=$1 [QSA,L]
-
-# ✅ /api/v1/products/action/123 (ESPECÍFICA)
-RewriteRule ^api/v1/products/([a-z-]+)/([0-9]+)/?$ index.php?fc=module&module=myapi&controller=apiproducts&action=$1&id=$2 [QSA,L]
-
-# ✅ /api/v1/products/123 (ESPECÍFICA)  
-RewriteRule ^api/v1/products/([0-9]+)/?$ index.php?fc=module&module=myapi&controller=apiproducts&id=$1 [QSA,L]
-
-# ✅ /api/v1/products/featured (GENÉRICA)
-RewriteRule ^api/v1/products/([a-z-]+)/?$ index.php?fc=module&module=myapi&controller=apiproducts&action=$1 [QSA,L]
-
-# ✅ /api/v1/products (MÁS GENÉRICA - ÚLTIMA)
-RewriteRule ^api/v1/products/?$ index.php?fc=module&module=myapi&controller=apiproducts [QSA,L]
+# ======== 🚀 NUESTRAS RUTAS API - LIMPIO ========
+RewriteRule ^api/v1/(.*)$ index.php?fc=module&module=myapi&controller=apigateway&route=$1 [QSA,L]
+# ======== FIN DE NUESTRAS RUTAS API ========

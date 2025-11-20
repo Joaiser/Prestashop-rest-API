@@ -5,12 +5,17 @@ HOY:
 ✅ Commit de lo que llevamos
 
 MAÑANA:
-🔧 Sistema de permisos por campos
+🔧✅ Sistema de permisos por campos
 
 VIERNES: 
 🔧 Endpoint /api/v1/products/all
 
 PRÓXIMA SEMANA:
+🔒 SEGURIDAD CRUD (URGENTE)
+Bloquear POST/PUT/DELETE para clientes externos
+
+Añadir campo client_type en la BD
+
 🎓 Webhooks (si te apetece aprender)
 
 🎓 Sistema de plugins

@@ -78,7 +78,7 @@ class MyApiApicategoriesModuleFrontController extends ModuleFrontController
     }
   }
 
-  private function handleListCategories()
+  public function handleListCategories()
   {
     try {
       $data = $this->getCategories();
@@ -98,7 +98,7 @@ class MyApiApicategoriesModuleFrontController extends ModuleFrontController
     }
   }
 
-  private function handleCategoryProducts($categoryId)
+  public function handleCategoryProducts($categoryId)
   {
     try {
       $data = $this->getCategoryProducts($categoryId);
@@ -123,7 +123,7 @@ class MyApiApicategoriesModuleFrontController extends ModuleFrontController
     }
   }
 
-  private function getCategories()
+  public function getCategories()
   {
     try {
       // ApiLogger::log("🟡 INICIANDO getCategories()");
@@ -177,7 +177,7 @@ class MyApiApicategoriesModuleFrontController extends ModuleFrontController
     }
   }
 
-  private function getCategoryProducts($categoryId)
+  public function getCategoryProducts($categoryId)
   {
     try {
       // ApiLogger::log("🟡 getCategoryProducts para categoría: " . $categoryId);
@@ -229,7 +229,7 @@ class MyApiApicategoriesModuleFrontController extends ModuleFrontController
   }
 
   // ✅ MÉTODO formatProduct 
-  private function formatProduct($product)
+  public function formatProduct($product)
   {
     if (is_array($product)) {
       $productObj = new Product($product['id_product'], true, $this->apiBase->getLanguageId());

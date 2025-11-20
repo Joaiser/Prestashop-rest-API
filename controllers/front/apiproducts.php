@@ -101,7 +101,7 @@ class MyApiApiproductsModuleFrontController extends ModuleFrontController
 
   // ✅ MÉTODOS ESPECÍFICOS PARA CADA ACCIÓN
 
-  private function handleListProducts()
+  public function handleListProducts()
   {
     $data = $this->getProducts();
     //✅FILTROOO
@@ -111,7 +111,7 @@ class MyApiApiproductsModuleFrontController extends ModuleFrontController
     ApiResponse::create()->success($data)->send();
   }
 
-  private function handleGetProduct($id)
+  public function handleGetProduct($id)
   {
     $data = $this->getProductById($id);
     // ✅ -_-
@@ -120,7 +120,7 @@ class MyApiApiproductsModuleFrontController extends ModuleFrontController
     ApiResponse::create()->success($filteredData)->send();
   }
 
-  private function handleFeatured()
+  public function handleFeatured()
   {
     $data = $this->getFeaturedProducts();
 
@@ -148,7 +148,7 @@ class MyApiApiproductsModuleFrontController extends ModuleFrontController
   }
 
   // ✅ NUEVO MÉTODO PARA ENDPOINT DE IMÁGENES
-  private function handleProductImages($productId)
+  public function handleProductImages($productId)
   {
     $data = $this->getProductImages($productId);
     ApiResponse::create()->success($data)->send();
