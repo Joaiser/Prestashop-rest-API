@@ -52,10 +52,10 @@ class MyApiApicategoriesModuleFrontController extends ModuleFrontController
       $id = Tools::getValue('id');
       $method = $_SERVER['REQUEST_METHOD'];
 
-      ApiLogger::log("apicategories request", [
-        'method' => $method,
-        'id' => $id
-      ]);
+      // ApiLogger::log("apicategories request", [
+      //   'method' => $method,
+      //   'id' => $id
+      // ]);
 
       if ($method === 'GET') {
         if ($id) {
@@ -71,6 +71,7 @@ class MyApiApicategoriesModuleFrontController extends ModuleFrontController
           ->send(405);
       }
     } catch (Exception $e) {
+      // ApiLogger::logError("Error en apicategories", $e);
       ApiResponse::create()
         ->error($e->getMessage())
         ->send(500);
@@ -90,6 +91,7 @@ class MyApiApicategoriesModuleFrontController extends ModuleFrontController
         ApiResponse::create()->success($filteredData)->send();
       }
     } catch (Exception $e) {
+      // ApiLogger::logError("Error en handleListCategories", $e);
       ApiResponse::create()
         ->error('Error interno del servidor: ' . $e->getMessage())
         ->send(500);
@@ -114,6 +116,7 @@ class MyApiApicategoriesModuleFrontController extends ModuleFrontController
         ApiResponse::create()->success($data)->send();
       }
     } catch (Exception $e) {
+      // ApiLogger::logError("Error en handleCategoryProducts", $e);
       ApiResponse::create()
         ->error('Error interno: ' . $e->getMessage())
         ->send(500);
@@ -123,8 +126,10 @@ class MyApiApicategoriesModuleFrontController extends ModuleFrontController
   private function getCategories()
   {
     try {
+      // ApiLogger::log("🟡 INICIANDO getCategories()");
 
       $categories = Category::getSimpleCategories($this->apiBase->getLanguageId());
+      // ApiLogger::log("🔍 Categorías encontradas: " . count($categories));
 
       $formattedCategories = [];
       $languageId = $this->apiBase->getLanguageId();
@@ -164,8 +169,10 @@ class MyApiApicategoriesModuleFrontController extends ModuleFrontController
         ];
       }
 
+      // ApiLogger::log("🟢 Categorías formateadas: " . count($formattedCategories));
       return $formattedCategories;
     } catch (Exception $e) {
+      // ApiLogger::logError("💥 ERROR en getCategories", $e);
       return ['error' => 'Error cargando categorías: ' . $e->getMessage()];
     }
   }
@@ -173,6 +180,7 @@ class MyApiApicategoriesModuleFrontController extends ModuleFrontController
   private function getCategoryProducts($categoryId)
   {
     try {
+      // ApiLogger::log("🟡 getCategoryProducts para categoría: " . $categoryId);
 
       $category = new Category($categoryId, $this->apiBase->getLanguageId());
 
@@ -191,6 +199,7 @@ class MyApiApicategoriesModuleFrontController extends ModuleFrontController
         false                            // only_active
       );
 
+      // ApiLogger::log("🔍 Productos encontrados: " . count($products));
 
       // Formatear categoría
       $languageId = $this->apiBase->getLanguageId();
@@ -210,6 +219,7 @@ class MyApiApicategoriesModuleFrontController extends ModuleFrontController
         'products' => array_map([$this, 'formatProduct'], $products)
       ];
     } catch (Exception $e) {
+      // ApiLogger::logError("💥 ERROR en getCategoryProducts", $e);
       return [
         'category' => ['id' => $categoryId, 'error' => 'Error loading category'],
         'products' => [],

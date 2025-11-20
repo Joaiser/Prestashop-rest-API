@@ -54,31 +54,46 @@ class ApiBaseController
   //✅ FILTRAR CAMPOS DE RESPUESTA
   public function filterResponseFields($endpoint, $data)
   {
-
+    // // DEBUG: Log inicial
+    // ApiLogger::log("🔍 FILTERING - Endpoint: $endpoint", [
+    //   'has_client' => !empty($this->currentClient),
+    //   'client_name' => $this->currentClient['client_name'] ?? 'NO_CLIENT'
+    // ]);
 
     // Si es cliente legacy/testing, devolver todos los campos
     if (!$this->currentClient) {
+      // ApiLogger::log("🔓 NO CLIENT - Returning all fields");
       return $data;
     }
 
-    // DEBUG: Log permisos del cliente
-
+    // // DEBUG: Log permisos del cliente
+    // ApiLogger::log("📋 CLIENT PERMISSIONS", [
+    //   'allowed_fields_raw' => $this->currentClient['allowed_fields'],
+    //   'allowed_endpoints_raw' => $this->currentClient['allowed_endpoints']
+    // ]);
 
     // Si no hay restricciones, devolvemos todos los campos
     if (empty($this->currentClient['allowed_fields']) || $this->currentClient['allowed_fields'] == '[]') {
+      // ApiLogger::log("🔓 NO FIELD RESTRICTIONS - Returning all fields");
       return $data;
     }
 
     $allowedFields = json_decode($this->currentClient['allowed_fields'], true);
 
     // DEBUG: Log campos permitidos para este endpoint
+    // ApiLogger::log("🎯 ALLOWED FIELDS FOR ENDPOINT", [
+    //   'endpoint' => $endpoint,
+    //   'allowed_fields' => $allowedFields[$endpoint] ?? 'NO_FIELDS_FOR_ENDPOINT'
+    // ]);
 
     // Si no hay campos específicos devolver todo
     if (!isset($allowedFields[$endpoint]) || empty($allowedFields[$endpoint])) {
+      // ApiLogger::log("🔓 NO FIELDS FOR THIS ENDPOINT - Returning all fields");
       return $data;
     }
 
     // DEBUG: Log datos originales
+    // ApiLogger::log("📊 ORIGINAL DATA FIELDS", array_keys($data));
 
     //Filtrar solo los campos permitidos
     $filteredData = [];
@@ -87,6 +102,13 @@ class ApiBaseController
         $filteredData[$field] = $data[$field];
       }
     }
+
+    // DEBUG: Log resultado del filtrado
+    // ApiLogger::log("✅ FILTERED RESULT", [
+    //   'original_fields_count' => count($data),
+    //   'filtered_fields_count' => count($filteredData),
+    //   'filtered_fields' => array_keys($filteredData)
+    // ]);
 
     return $filteredData;
   }
