@@ -1,4 +1,5 @@
 <?php
+
 class ApiClient extends ObjectModel
 {
   public $id_client;
@@ -12,6 +13,8 @@ class ApiClient extends ObjectModel
   public $requests_count;
   public $last_request;
   public $webhook_url;
+  public $allowed_fields;
+  public $allowed_endpoints;
   public $created_at;
   public $updated_at;
 
@@ -29,8 +32,26 @@ class ApiClient extends ObjectModel
       'requests_count' => ['type' => self::TYPE_INT, 'validate' => 'isUnsignedInt'],
       'last_request' => ['type' => self::TYPE_DATE, 'validate' => 'isDate'],
       'webhook_url' => ['type' => self::TYPE_STRING, 'validate' => 'isUrl', 'size' => 500],
+
+      // ✅ AÑADIR LOS NUEVOS CAMPOS
+      'allowed_fields' => ['type' => self::TYPE_STRING, 'validate' => 'isJson'],
+      'allowed_endpoints' => ['type' => self::TYPE_STRING, 'validate' => 'isJson'],
+
       'created_at' => ['type' => self::TYPE_DATE, 'validate' => 'isDate', 'required' => true],
       'updated_at' => ['type' => self::TYPE_DATE, 'validate' => 'isDate', 'required' => true],
     ],
   ];
+
+  public function __construct($id = null, $id_lang = null, $id_shop = null)
+  {
+    parent::__construct($id, $id_lang, $id_shop);
+
+    // ✅ INICIALIZAR LOS NUEVOS CAMPOS SI ESTÁN VACÍOS
+    if ($this->id && empty($this->allowed_endpoints)) {
+      $this->allowed_endpoints = '[]';
+    }
+    if ($this->id && empty($this->allowed_fields)) {
+      $this->allowed_fields = '[]';
+    }
+  }
 }

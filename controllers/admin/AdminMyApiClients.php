@@ -291,14 +291,22 @@ class AdminMyApiClientsController extends ModuleAdminController
     $values = parent::getFieldsValue($obj);
 
     if ($obj && $obj->id) {
-      // Cargar endpoints permitidos
-      $allowedEndpoints = json_decode($obj->allowed_endpoints, true) ?: [];
+      // ✅ CARGAR ENDPOINTS PERMITIDOS - CON VALIDACIÓN
+      $allowedEndpoints = [];
+      if (!empty($obj->allowed_endpoints)) {
+        $allowedEndpoints = json_decode($obj->allowed_endpoints, true) ?: [];
+      }
+
       foreach ($allowedEndpoints as $endpoint) {
         $values['allowed_endpoints_' . $endpoint] = true;
       }
 
-      // Cargar campos permitidos
-      $allowedFields = json_decode($obj->allowed_fields, true) ?: [];
+      // ✅ CARGAR CAMPOS PERMITIDOS - CON VALIDACIÓN
+      $allowedFields = [];
+      if (!empty($obj->allowed_fields)) {
+        $allowedFields = json_decode($obj->allowed_fields, true) ?: [];
+      }
+
       foreach ($allowedFields as $endpoint => $fields) {
         foreach ($fields as $field) {
           $values['allowed_fields_' . $endpoint . '_' . $field] = true;
@@ -321,7 +329,8 @@ class AdminMyApiClientsController extends ModuleAdminController
       }
     }
 
-    $_POST['allowed_endpoints'] = json_encode($allowedEndpoints);
+    // ✅ ASEGURAR QUE SIEMPRE SEA JSON VÁLIDO, NO NULL
+    $_POST['allowed_endpoints'] = !empty($allowedEndpoints) ? json_encode($allowedEndpoints) : '[]';
 
     // Procesar campos
     $allowedFields = [];
@@ -337,7 +346,7 @@ class AdminMyApiClientsController extends ModuleAdminController
       }
     }
 
-    $_POST['allowed_fields'] = json_encode($allowedFields);
+    $_POST['allowed_fields'] = !empty($allowedFields) ? json_encode($allowedFields) : '[]';
   }
 
   // ✅ RENDERIZAR CAMPO API KEY CON BOTÓN COPIAR EN EL FORMULARIO - LIMPIO
