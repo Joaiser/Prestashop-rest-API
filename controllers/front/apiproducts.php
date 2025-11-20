@@ -37,6 +37,12 @@ class MyApiApiproductsModuleFrontController extends ModuleFrontController
         ->send(401);
     }
 
+    if (!$this->apiBase->validateEndpointAccess('products')) {
+      ApiResponse::create()
+        ->error('Endpoint no permitido para este cliente')
+        ->send(403);
+    }
+
     parent::init();
   }
 
@@ -98,12 +104,53 @@ class MyApiApiproductsModuleFrontController extends ModuleFrontController
   private function handleListProducts()
   {
     $data = $this->getProducts();
+    //✅FILTROOO
+    if (isset($data['products'])) {
+      $data['products'] = $this->apiBase->filterResponseArray('products', $data['products']);
+    }
     ApiResponse::create()->success($data)->send();
   }
 
   private function handleGetProduct($id)
   {
     $data = $this->getProductById($id);
+    // ✅ -_-
+    $filteredData = $this->apiBase->filterResponseFields('products', $data);
+
+    ApiResponse::create()->success($filteredData)->send();
+  }
+
+  private function handleFeatured()
+  {
+    $data = $this->getFeaturedProducts();
+
+    if (isset($data['error'])) {
+      ApiResponse::create()
+        ->error($data['error'])
+        ->send(400);
+    } else {
+      // ✅ -_-
+      $filteredData = $this->apiBase->filterResponseArray('products', $data);
+      ApiResponse::create()->success($filteredData)->send();
+    }
+  }
+
+  private function handleSearch()
+  {
+    $data = $this->searchProducts();
+    ApiResponse::create()->success($data)->send();
+  }
+
+  private function handleProductCategories($productId)
+  {
+    $data = $this->getProductCategories($productId);
+    ApiResponse::create()->success($data)->send();
+  }
+
+  // ✅ NUEVO MÉTODO PARA ENDPOINT DE IMÁGENES
+  private function handleProductImages($productId)
+  {
+    $data = $this->getProductImages($productId);
     ApiResponse::create()->success($data)->send();
   }
 
@@ -125,39 +172,6 @@ class MyApiApiproductsModuleFrontController extends ModuleFrontController
   {
     $data = $this->deleteProduct($id);
     ApiResponse::create()->success($data, 'Producto eliminado')->send(200);
-  }
-
-  private function handleFeatured()
-  {
-    $data = $this->getFeaturedProducts();
-
-    // Si hay error, devolver código 400 en lugar de 500
-    if (isset($data['error'])) {
-      ApiResponse::create()
-        ->error($data['error'])
-        ->send(400);
-    } else {
-      ApiResponse::create()->success($data)->send();
-    }
-  }
-
-  private function handleSearch()
-  {
-    $data = $this->searchProducts();
-    ApiResponse::create()->success($data)->send();
-  }
-
-  private function handleProductCategories($productId)
-  {
-    $data = $this->getProductCategories($productId);
-    ApiResponse::create()->success($data)->send();
-  }
-
-  // ✅ NUEVO MÉTODO PARA ENDPOINT DE IMÁGENES
-  private function handleProductImages($productId)
-  {
-    $data = $this->getProductImages($productId);
-    ApiResponse::create()->success($data)->send();
   }
 
   // ========== MÉTODOS CRUD COMPLETOS ==========
