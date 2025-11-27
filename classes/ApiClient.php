@@ -14,6 +14,7 @@ class ApiClient extends ObjectModel
   public $webhook_url;
   public $allowed_fields;
   public $allowed_endpoints;
+  public $allowed_operations;
   public $allowed_origins;
   public $created_at;
   public $updated_at;
@@ -30,11 +31,12 @@ class ApiClient extends ObjectModel
       'is_active' => ['type' => self::TYPE_BOOL, 'validate' => 'isBool'],
       'rate_limit' => ['type' => self::TYPE_INT, 'validate' => 'isUnsignedInt'],
       'requests_count' => ['type' => self::TYPE_INT, 'validate' => 'isUnsignedInt'],
-      'last_request' => ['type' => self::TYPE_DATE, 'validate' => 'isDate'],
+      'last_request' => ['type' => self::TYPE_DATE, 'validate' => 'isDateFormat', 'allow_null' => true],
       'webhook_url' => ['type' => self::TYPE_STRING, 'validate' => 'isUrl', 'size' => 500],
       'allowed_fields' => ['type' => self::TYPE_STRING, 'validate' => 'isJson'],
       'allowed_endpoints' => ['type' => self::TYPE_STRING, 'validate' => 'isJson'],
-      'allowed_origins' => ['type' => self::TYPE_STRING, 'validate' => 'isJson'],  // ✅ NUEVO
+      'allowed_operations' => ['type' => self::TYPE_STRING, 'validate' => 'isJson'],  // ✅ NUEVO
+      'allowed_origins' => ['type' => self::TYPE_STRING, 'validate' => 'isJson'],
       'created_at' => ['type' => self::TYPE_DATE, 'validate' => 'isDate', 'required' => true],
       'updated_at' => ['type' => self::TYPE_DATE, 'validate' => 'isDate', 'required' => true],
     ],
@@ -50,6 +52,9 @@ class ApiClient extends ObjectModel
     }
     if ($this->id && empty($this->allowed_fields)) {
       $this->allowed_fields = '[]';
+    }
+    if ($this->id && empty($this->allowed_operations)) {
+      $this->allowed_operations = '["read"]';  // ✅ Por defecto solo lectura
     }
     if ($this->id && empty($this->allowed_origins)) {
       $this->allowed_origins = '[]';

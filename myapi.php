@@ -45,24 +45,25 @@ class MyApi extends Module
   private function createClientsTable()
   {
     $sql = 'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'external_api_clients` (
-            `id_client` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-            `client_name` VARCHAR(255) NOT NULL,
-            `company` VARCHAR(255) NULL,
-            `email` VARCHAR(255) NULL,
-            `api_key` VARCHAR(255) NOT NULL UNIQUE,
-            `secret_key` VARCHAR(255) NULL,
-            `is_active` TINYINT(1) DEFAULT 1,
-            `rate_limit` INT(11) DEFAULT 1000,
-            `requests_count` INT(11) DEFAULT 0,
-            `last_request` DATETIME NULL,
-            `webhook_url` VARCHAR(500) NULL,
-            `allowed_fields` TEXT NULL,
-            `allowed_endpoints` TEXT NULL,
-            `allowed_origins` TEXT NULL, 
-            `created_at` DATETIME NOT NULL,
-            `updated_at` DATETIME NOT NULL,
-            PRIMARY KEY (`id_client`)
-        ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8;';
+          `id_client` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+          `client_name` VARCHAR(255) NOT NULL,
+          `company` VARCHAR(255) NULL,
+          `email` VARCHAR(255) NULL,
+          `api_key` VARCHAR(255) NOT NULL UNIQUE,
+          `secret_key` VARCHAR(255) NULL,
+          `is_active` TINYINT(1) DEFAULT 1,
+          `rate_limit` INT(11) DEFAULT 1000,
+          `requests_count` INT(11) DEFAULT 0,
+          `last_request` DATETIME NULL,
+          `webhook_url` VARCHAR(500) NULL,
+          `allowed_fields` TEXT NULL,
+          `allowed_endpoints` TEXT NULL,
+          `allowed_operations` TEXT NULL,  
+          `allowed_origins` TEXT NULL, 
+          `created_at` DATETIME NOT NULL,
+          `updated_at` DATETIME NOT NULL,
+          PRIMARY KEY (`id_client`)
+      ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8;';
     return Db::getInstance()->execute($sql);
   }
 

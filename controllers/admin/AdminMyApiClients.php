@@ -1,6 +1,5 @@
 <?php
 
-
 class AdminMyApiClientsController extends ModuleAdminController
 {
   public function __construct()
@@ -14,8 +13,6 @@ class AdminMyApiClientsController extends ModuleAdminController
     $this->className = 'ApiClient';
     $this->identifier = 'id_client';
     $this->lang = false;
-
-
 
     parent::__construct();
 
@@ -195,6 +192,42 @@ class AdminMyApiClientsController extends ModuleAdminController
         ],
         'hint' => $this->l('Selecciona los endpoints a los que puede acceder este cliente')
       ],
+      // ✅ NUEVO: OPERACIONES PERMITIDAS (SOLO LECTURA PARA EXTERNOS)
+      [
+        'type' => 'checkbox',
+        'label' => $this->l('Operaciones permitidas'),
+        'name' => 'allowed_operations',
+        'values' => [
+          'query' => [
+            [
+              'id' => 'read',
+              'name' => '📖 Lectura (GET) - Permitido para externos',
+              'val' => 'read'
+            ],
+            [
+              'id' => 'create',
+              'name' => '🚫 Crear (POST) - Solo uso interno',
+              'val' => 'create',
+              'disabled' => true
+            ],
+            [
+              'id' => 'update',
+              'name' => '🚫 Actualizar (PUT) - Solo uso interno',
+              'val' => 'update',
+              'disabled' => true
+            ],
+            [
+              'id' => 'delete',
+              'name' => '🚫 Eliminar (DELETE) - Solo uso interno',
+              'val' => 'delete',
+              'disabled' => true
+            ]
+          ],
+          'id' => 'id',
+          'name' => 'name'
+        ],
+        'hint' => $this->l('Los clientes externos solo pueden tener acceso de LECTURA por seguridad')
+      ],
       // SEPARADOR
       [
         'type' => 'free',
@@ -261,8 +294,6 @@ class AdminMyApiClientsController extends ModuleAdminController
     return parent::renderForm();
   }
 
-
-
   protected function getEndpointsForCheckboxes()
   {
     $endpoints = $this->module->getAvailableEndpoints();
@@ -325,6 +356,12 @@ class AdminMyApiClientsController extends ModuleAdminController
         }
       }
 
+      // ✅ NUEVO: CARGAR OPERACIONES PERMITIDAS (SIEMPRE SOLO LECTURA)
+      $values['allowed_operations_read'] = true; // Siempre true para externos
+      $values['allowed_operations_create'] = false; // Siempre false para externos
+      $values['allowed_operations_update'] = false; // Siempre false para externos
+      $values['allowed_operations_delete'] = false; // Siempre false para externos
+
       // ✅ NUEVO: CARGAR DOMINIOS CORS
       if (!empty($obj->allowed_origins)) {
         $allowedOrigins = json_decode($obj->allowed_origins, true) ?: [];
@@ -348,6 +385,10 @@ class AdminMyApiClientsController extends ModuleAdminController
     }
 
     $_POST['allowed_endpoints'] = !empty($allowedEndpoints) ? json_encode($allowedEndpoints) : '[]';
+
+    // ✅ NUEVO: PROCESAR OPERACIONES (SIEMPRE SOLO LECTURA PARA EXTERNOS)
+    $allowedOperations = ['read']; // Los externos solo pueden leer
+    $_POST['allowed_operations'] = json_encode($allowedOperations);
 
     // Procesar campos
     $allowedFields = [];

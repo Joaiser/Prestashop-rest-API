@@ -181,7 +181,7 @@ class MyApiApiproductsModuleFrontController extends ModuleFrontController
     try {
       // ✅ PAGINACIÓN MEJORADA
       $page = max(1, (int)Tools::getValue('page', 1));
-      $limit = max(1, min((int)Tools::getValue('limit', 50), 100)); // Máximo 100 por página
+      $limit = max(1, min((int)Tools::getValue('limit', 50), 730)); // Máximo 730 por página
       $start = ($page - 1) * $limit;
 
       ApiLogger::log("Loading paginated products", [
