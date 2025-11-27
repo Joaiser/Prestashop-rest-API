@@ -123,10 +123,10 @@ class ApiBaseController
       return true; // ✅ ZEUS puede lo que quiera
     }
 
-    // ✅ CLAVES DE TESTING - también acceso total
+    // ✅ CLAVES DE TESTING - SOLO LECTURA (para no joder la BD)
     $testKeys = ['API_KEY_PRUEBA', 'mykey', 'test', 'testing', 'demo'];
     if (in_array($apiKey, $testKeys)) {
-      return true;
+      return $operation === 'read'; // ✅ Solo pueden leer, no modificar
     }
 
     // ❌ Para clientes de la BD, verificar permisos

@@ -8,13 +8,13 @@ MAÑANA:
 🔧✅ Sistema de permisos por campos
 
 VIERNES: 
-🔧 Endpoint /api/v1/products/all
+🔧 ✅Endpoint /api/v1/products/all
 
 PRÓXIMA SEMANA:
-🔒 SEGURIDAD CRUD (URGENTE)
-Bloquear POST/PUT/DELETE para clientes externos
+🔒 ✅SEGURIDAD CRUD (URGENTE)
+✅ Bloquear POST/PUT/DELETE para clientes externos
 
-Añadir campo client_type en la BD
+✅ Añadir campo client_type en la BD -> cambiado por permisos al cliente de acciones crud
 
 🎓 Webhooks (si te apetece aprender)
 
