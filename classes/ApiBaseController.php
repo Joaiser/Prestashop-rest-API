@@ -113,6 +113,32 @@ class ApiBaseController
     return $filteredData;
   }
 
+  public function canPerformOperation($operation)
+  {
+    $apiKey = $this->getApiKey();
+
+    // ✅ API KEY LEGACY - DIOS OLIMPO GRIEGO (acceso total)
+    $validProdKey = Configuration::get('MYAPI_PROD_KEY');
+    if ($apiKey === $validProdKey) {
+      return true; // ✅ ZEUS puede lo que quiera
+    }
+
+    // ✅ CLAVES DE TESTING - también acceso total
+    $testKeys = ['API_KEY_PRUEBA', 'mykey', 'test', 'testing', 'demo'];
+    if (in_array($apiKey, $testKeys)) {
+      return true;
+    }
+
+    // ❌ Para clientes de la BD, verificar permisos
+    $client = $this->getClientByApiKey($apiKey);
+    if (!$client || empty($client['allowed_operations'])) {
+      return false;
+    }
+
+    $allowedOperations = json_decode($client['allowed_operations'], true);
+    return in_array($operation, $allowedOperations);
+  }
+
   //✅ FILTRAR ARRAY DE DATOS (para listas)
   public function filterResponseArray($endpoint, $dataArray)
   {

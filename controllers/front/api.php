@@ -74,6 +74,11 @@ class MyApiApiModuleFrontController extends ModuleFrontController
     return ['message' => 'Endpoint en desarrollo'];
   }
 
+  private function getCategories()
+  {
+    return ['message' => 'Endpoint en desarrollo'];
+  }
+
   private function getOrders()
   {
     return ['message' => 'Endpoint en desarrollo'];

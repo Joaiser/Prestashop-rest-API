@@ -154,22 +154,43 @@ class MyApiApiproductsModuleFrontController extends ModuleFrontController
     ApiResponse::create()->success($data)->send();
   }
 
-  private function handleCreateProduct()
+  public function handleCreateProduct()
   {
+    // ✅ VERIFICAR PERMISO DE CREACIÓN
+    if (!$this->apiBase->canPerformOperation('create')) {
+      ApiResponse::create()
+        ->error('No tienes permisos para crear productos')
+        ->send(403);
+    }
+
     $input = $this->getInputData();
     $data = $this->createProduct($input);
     ApiResponse::create()->success($data, 'Producto creado')->send(201);
   }
 
-  private function handleUpdateProduct($id)
+  public function handleUpdateProduct($id)
   {
+    // ✅ VERIFICAR PERMISO DE ACTUALIZACIÓN
+    if (!$this->apiBase->canPerformOperation('update')) {
+      ApiResponse::create()
+        ->error('No tienes permisos para actualizar productos')
+        ->send(403);
+    }
+
     $input = $this->getInputData();
     $data = $this->updateProduct($id, $input);
     ApiResponse::create()->success($data, 'Producto actualizado')->send(200);
   }
 
-  private function handleDeleteProduct($id)
+  public function handleDeleteProduct($id)
   {
+    // ✅ VERIFICAR PERMISO DE ELIMINACIÓN
+    if (!$this->apiBase->canPerformOperation('delete')) {
+      ApiResponse::create()
+        ->error('No tienes permisos para eliminar productos')
+        ->send(403);
+    }
+
     $data = $this->deleteProduct($id);
     ApiResponse::create()->success($data, 'Producto eliminado')->send(200);
   }

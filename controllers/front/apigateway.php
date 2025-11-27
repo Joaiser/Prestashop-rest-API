@@ -83,6 +83,19 @@ class MyApiApigatewayModuleFrontController extends ModuleFrontController
           $this->handleProductImages($matches[1]);
           break;
 
+        // ✅ NUEVAS RUTAS CRUD
+        case $route === 'products' && $method === 'POST':
+          $this->handleCreateProduct();
+          break;
+
+        case preg_match('/^products\/(\d+)$/', $route, $matches) && $method === 'PUT':
+          $this->handleUpdateProduct($matches[1]);
+          break;
+
+        case preg_match('/^products\/(\d+)$/', $route, $matches) && $method === 'DELETE':
+          $this->handleDeleteProduct($matches[1]);
+          break;
+
         case $route === 'categories' && $method === 'GET':
           $this->handleCategoriesList();
           break;
@@ -140,6 +153,31 @@ class MyApiApigatewayModuleFrontController extends ModuleFrontController
     $controller = new MyApiApiproductsModuleFrontController();
     $controller->init();
     $controller->handleProductImages($productId);
+  }
+
+  // ✅ NUEVOS HANDLERS CRUD
+  private function handleCreateProduct()
+  {
+    require_once _PS_MODULE_DIR_ . 'myapi/controllers/front/apiproducts.php';
+    $controller = new MyApiApiproductsModuleFrontController();
+    $controller->init();
+    $controller->handleCreateProduct();
+  }
+
+  private function handleUpdateProduct($id)
+  {
+    require_once _PS_MODULE_DIR_ . 'myapi/controllers/front/apiproducts.php';
+    $controller = new MyApiApiproductsModuleFrontController();
+    $controller->init();
+    $controller->handleUpdateProduct($id);
+  }
+
+  private function handleDeleteProduct($id)
+  {
+    require_once _PS_MODULE_DIR_ . 'myapi/controllers/front/apiproducts.php';
+    $controller = new MyApiApiproductsModuleFrontController();
+    $controller->init();
+    $controller->handleDeleteProduct($id);
   }
 
   private function handleCategoriesList()

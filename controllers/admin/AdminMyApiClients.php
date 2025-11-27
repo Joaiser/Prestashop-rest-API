@@ -193,6 +193,7 @@ class AdminMyApiClientsController extends ModuleAdminController
         'hint' => $this->l('Selecciona los endpoints a los que puede acceder este cliente')
       ],
       // ✅ NUEVO: OPERACIONES PERMITIDAS (SOLO LECTURA PARA EXTERNOS)
+      // ✅ CORREGIDO: Quitar disabled para permitir selección
       [
         'type' => 'checkbox',
         'label' => $this->l('Operaciones permitidas'),
@@ -201,32 +202,29 @@ class AdminMyApiClientsController extends ModuleAdminController
           'query' => [
             [
               'id' => 'read',
-              'name' => '📖 Lectura (GET) - Permitido para externos',
+              'name' => '📖 Lectura (GET)',
               'val' => 'read'
             ],
             [
               'id' => 'create',
-              'name' => '🚫 Crear (POST) - Solo uso interno',
-              'val' => 'create',
-              'disabled' => true
+              'name' => '➕ Crear (POST)',
+              'val' => 'create'
             ],
             [
               'id' => 'update',
-              'name' => '🚫 Actualizar (PUT) - Solo uso interno',
-              'val' => 'update',
-              'disabled' => true
+              'name' => '✏️ Actualizar (PUT)',
+              'val' => 'update'
             ],
             [
               'id' => 'delete',
-              'name' => '🚫 Eliminar (DELETE) - Solo uso interno',
-              'val' => 'delete',
-              'disabled' => true
+              'name' => '🗑️ Eliminar (DELETE)',
+              'val' => 'delete'
             ]
           ],
           'id' => 'id',
           'name' => 'name'
         ],
-        'hint' => $this->l('Los clientes externos solo pueden tener acceso de LECTURA por seguridad')
+        'hint' => $this->l('Selecciona las operaciones permitidas para este cliente')
       ],
       // SEPARADOR
       [
@@ -356,13 +354,19 @@ class AdminMyApiClientsController extends ModuleAdminController
         }
       }
 
-      // ✅ NUEVO: CARGAR OPERACIONES PERMITIDAS (SIEMPRE SOLO LECTURA)
-      $values['allowed_operations_read'] = true; // Siempre true para externos
-      $values['allowed_operations_create'] = false; // Siempre false para externos
-      $values['allowed_operations_update'] = false; // Siempre false para externos
-      $values['allowed_operations_delete'] = false; // Siempre false para externos
+      // ✅ CORREGIDO: CARGAR OPERACIONES DESDE BD (NO FORZAR)
+      $allowedOperations = [];
+      if (!empty($obj->allowed_operations)) {
+        $allowedOperations = json_decode($obj->allowed_operations, true) ?: [];
+      }
 
-      // ✅ NUEVO: CARGAR DOMINIOS CORS
+      // Marcar checkboxes según lo que haya en BD
+      $values['allowed_operations_read'] = in_array('read', $allowedOperations);
+      $values['allowed_operations_create'] = in_array('create', $allowedOperations);
+      $values['allowed_operations_update'] = in_array('update', $allowedOperations);
+      $values['allowed_operations_delete'] = in_array('delete', $allowedOperations);
+
+      // ✅ CARGAR DOMINIOS CORS
       if (!empty($obj->allowed_origins)) {
         $allowedOrigins = json_decode($obj->allowed_origins, true) ?: [];
         $values['allowed_origins'] = implode("\n", $allowedOrigins);
@@ -386,8 +390,21 @@ class AdminMyApiClientsController extends ModuleAdminController
 
     $_POST['allowed_endpoints'] = !empty($allowedEndpoints) ? json_encode($allowedEndpoints) : '[]';
 
-    // ✅ NUEVO: PROCESAR OPERACIONES (SIEMPRE SOLO LECTURA PARA EXTERNOS)
-    $allowedOperations = ['read']; // Los externos solo pueden leer
+    // ✅ CORREGIDO: PROCESAR OPERACIONES SELECCIONADAS (NO FORZAR)
+    $allowedOperations = [];
+    $availableOperations = ['read', 'create', 'update', 'delete'];
+
+    foreach ($availableOperations as $operation) {
+      if (Tools::getValue('allowed_operations_' . $operation)) {
+        $allowedOperations[] = $operation;
+      }
+    }
+
+    // Si no se selecciona ninguna, por defecto solo lectura
+    if (empty($allowedOperations)) {
+      $allowedOperations = ['read'];
+    }
+
     $_POST['allowed_operations'] = json_encode($allowedOperations);
 
     // Procesar campos
@@ -406,11 +423,11 @@ class AdminMyApiClientsController extends ModuleAdminController
 
     $_POST['allowed_fields'] = !empty($allowedFields) ? json_encode($allowedFields) : '[]';
 
-    // ✅ NUEVO: Procesar dominios CORS
+    // ✅ Procesar dominios CORS
     $allowedOrigins = Tools::getValue('allowed_origins');
     if (!empty($allowedOrigins)) {
       $allowedOrigins = Tools::getValue('allowed_origins');
-      $allowedOrigins = stripslashes($allowedOrigins); // ⬅️ QUITAR BARRAS INVERTIDAS
+      $allowedOrigins = stripslashes($allowedOrigins);
       if (!empty($allowedOrigins)) {
         $originsArray = array_filter(array_map('trim', explode("\n", $allowedOrigins)));
         $_POST['allowed_origins'] = json_encode($originsArray, JSON_UNESCAPED_SLASHES);
