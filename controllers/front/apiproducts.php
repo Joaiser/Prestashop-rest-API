@@ -521,36 +521,15 @@ class MyApiApiproductsModuleFrontController extends ModuleFrontController
   private function getProductCombinationsBasic($productId)
   {
     try {
-      ApiLogger::log("🔄 Starting getProductCombinationsBasic", ['product_id' => $productId]);
-
-      // ✅ VERSIÓN MÍNIMA Y SEGURA - SIN IMÁGENES POR AHORA
       $product = new Product($productId);
 
-      // if (!Validate::isLoadedObject($product)) {
-      //   ApiLogger::log("❌ Product not found", ['product_id' => $productId]);
-      //   return [];
-      // }
-
-      // ApiLogger::log("✅ Product loaded", [
-      //   'id' => $product->id,
-      //   'name' => $product->name,
-      //   'has_attributes' => $product->hasAttributes()
-      // ]);
-
-      if (!$product->hasAttributes()) {
-        // ApiLogger::log("ℹ️ Product has no attributes", ['product_id' => $productId]);
+      if (!Validate::isLoadedObject($product) || !$product->hasAttributes()) {
         return [];
       }
 
       $combinations = $product->getAttributesResume($this->apiBase->getLanguageId());
 
-      // ApiLogger::log("📊 Raw combinations data", [
-      //   'count' => count($combinations),
-      //   'combinations' => $combinations
-      // ]);
-
       if (empty($combinations)) {
-        // ApiLogger::log("ℹ️ No combinations found", ['product_id' => $productId]);
         return [];
       }
 
@@ -558,18 +537,11 @@ class MyApiApiproductsModuleFrontController extends ModuleFrontController
       foreach ($combinations as $comb) {
         $combinationId = $comb['id_product_attribute'];
 
-        // ✅ VERIFICACIÓN EXTRA DE SEGURIDAD
         if (empty($combinationId)) {
-          // ApiLogger::log("⚠️ Empty combination ID", ['combination_data' => $comb]);
           continue;
         }
 
-        // ApiLogger::log("🔄 Processing combination", [
-        //   'combination_id' => $combinationId,
-        //   'reference' => $comb['reference'] ?? 'NO_REFERENCE'
-        // ]);
-
-        // ✅ PRECIO SIMPLIFICADO - usar precio del producto como fallback
+        // ✅ PRECIO
         $price = $product->price;
         try {
           $calculatedPrice = Product::getPriceStatic(
@@ -585,9 +557,11 @@ class MyApiApiproductsModuleFrontController extends ModuleFrontController
             $price = $calculatedPrice;
           }
         } catch (Exception $e) {
-          ApiLogger::logError("⚠️ Error calculating combination price, using product price", $e);
-          // Mantener el precio del producto como fallback
+          // Usar precio del producto como fallback
         }
+
+        // ✅ OBTENER IMÁGENES ESPECÍFICAS DE LA COMBINACIÓN
+        $combinationImages = $this->getCombinationImages($productId, $combinationId);
 
         $basicCombinations[] = [
           'id' => (int)$combinationId,
@@ -596,22 +570,104 @@ class MyApiApiproductsModuleFrontController extends ModuleFrontController
           'price' => (float)$price,
           'attributes' => $comb['attribute_designation'] ?? '',
           'default_on' => (bool)($comb['default_on'] ?? false),
-          'images' => [] // ✅ TEMPORALMENTE VACÍO - lo añadiremos después
+          'images' => $combinationImages // ✅ CON IMÁGENES REALES
         ];
       }
 
-      // ApiLogger::log("✅ Combinations processed successfully", [
-      //   'product_id' => $productId,
-      //   'combinations_count' => count($basicCombinations)
-      // ]);
-
       return $basicCombinations;
     } catch (Exception $e) {
-      // ApiLogger::logError("❌ CRITICAL ERROR in getProductCombinationsBasic", $e);
-      return []; // ✅ SIEMPRE retornar array vacío en caso de error
+      return [];
     }
   }
 
+  private function getCombinationImages($productId, $combinationId)
+  {
+    try {
+      $combination = new Combination($combinationId);
+
+      if (!Validate::isLoadedObject($combination)) {
+        return [];
+      }
+
+      $imageIds = $combination->getWsImages();
+
+      // ✅ MANEJAR CASOS: false, array vacío, o sin imágenes
+      if (empty($imageIds) || !is_array($imageIds)) {
+        return [];
+      }
+
+      $product = new Product($productId, false, $this->apiBase->getLanguageId());
+
+      if (!Validate::isLoadedObject($product)) {
+        return [];
+      }
+
+      $formattedImages = [];
+
+      foreach ($imageIds as $imageData) {
+        // ✅ CORREGIDO: EXTRAER EL ID DEL ARRAY
+        $imageId = null;
+
+        if (is_array($imageData)) {
+          $imageId = $imageData['id'] ?? null;
+        } else {
+          $imageId = $imageData;
+        }
+
+        if (empty($imageId)) {
+          continue;
+        }
+
+        $imageInfo = [
+          'id' => (int)$imageId,
+          'sizes' => []
+        ];
+
+        // ✅ OBTENER TODOS LOS TAMAÑOS
+        $imageTypes = ImageType::getImagesTypes('products');
+        foreach ($imageTypes as $type) {
+          try {
+            $imageUrl = $this->context->link->getImageLink(
+              $product->link_rewrite[$this->apiBase->getLanguageId()],
+              $imageId,
+              $type['name']
+            );
+
+            $absoluteUrl = $this->getAbsoluteImageUrl($imageUrl);
+
+            $imageInfo['sizes'][$type['name']] = [
+              'url' => $absoluteUrl,
+              'width' => (int)$type['width'],
+              'height' => (int)$type['height']
+            ];
+          } catch (Exception $e) {
+            // Silenciar errores individuales de tamaños
+          }
+        }
+
+        // ✅ URL ORIGINAL
+        try {
+          $originalUrl = $this->context->link->getImageLink(
+            $product->link_rewrite[$this->apiBase->getLanguageId()],
+            $imageId
+          );
+          $imageInfo['sizes']['original'] = [
+            'url' => $this->getAbsoluteImageUrl($originalUrl),
+            'width' => null,
+            'height' => null
+          ];
+        } catch (Exception $e) {
+          // Silenciar error de URL original
+        }
+
+        $formattedImages[] = $imageInfo;
+      }
+
+      return $formattedImages;
+    } catch (Exception $e) {
+      return [];
+    }
+  }
 
   // ✅ ENDPOINT SEPARADO PARA COMBINACIONES COMPLETAS
   private function getProductCombinationsDetailed($productId)
