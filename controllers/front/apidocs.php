@@ -52,7 +52,7 @@ class MyApiApidocsModuleFrontController extends ModuleFrontController
         ]
       ],
       'servers' => [
-        ['url' => 'https://test6.salamandraluz.net', 'description' => 'Servidor principal HTTPS']
+        ['url' => $apiUrl, 'description' => 'Servidor actual'] // ✅ URL RELATIVA
       ],
       'paths' => $this->getPaths(),
       'components' => [
@@ -65,7 +65,6 @@ class MyApiApidocsModuleFrontController extends ModuleFrontController
           ]
         ],
         'schemas' => $this->getSchemas(),
-        // ✅ AÑADE ESTOS RESPONSES QUE FALTAN:
         'responses' => [
           'Unauthorized' => [
             'description' => 'API Key inválida o faltante',
@@ -449,7 +448,7 @@ class MyApiApidocsModuleFrontController extends ModuleFrontController
           'active' => ['type' => 'boolean', 'example' => true],
           'stock' => ['type' => 'integer', 'example' => 25],
           'description' => ['type' => 'string'],
-          'has_combinations' => ['type' => 'boolean', 'example' => false] // ✅ AÑADIR ESTO
+          'has_combinations' => ['type' => 'boolean', 'example' => false]
         ]
       ],
       'ProductDetailed' => [
@@ -462,7 +461,7 @@ class MyApiApidocsModuleFrontController extends ModuleFrontController
           'active' => ['type' => 'boolean'],
           'stock' => ['type' => 'integer'],
           'description' => ['type' => 'string'],
-          'has_combinations' => ['type' => 'boolean'], // ✅ AÑADIR
+          'has_combinations' => ['type' => 'boolean'],
           'images' => [
             'type' => 'array',
             'items' => ['$ref' => '#/components/schemas/ProductImage']
@@ -477,14 +476,12 @@ class MyApiApidocsModuleFrontController extends ModuleFrontController
             'type' => 'array',
             'items' => ['type' => 'object']
           ],
-          // ✅ NUEVO: AÑADIR COMBINACIONES
           'combinations' => [
             'type' => 'array',
             'items' => ['$ref' => '#/components/schemas/ProductCombination']
           ]
         ]
       ],
-      // ✅ NUEVO SCHEMA PARA COMBINACIONES
       'ProductCombination' => [
         'type' => 'object',
         'properties' => [
@@ -549,7 +546,6 @@ class MyApiApidocsModuleFrontController extends ModuleFrontController
 
   private function renderSwaggerUI($spec)
   {
-    // ✅ JSON válido para JavaScript
     $specJson = json_encode($spec, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP);
 
     echo <<<HTML
@@ -582,6 +578,12 @@ class MyApiApidocsModuleFrontController extends ModuleFrontController
                 ],
                 layout: "BaseLayout",
                 requestInterceptor: function(request) {
+                    // ✅ INTERCEPTOR PARA CORREGIR URLS ABSOLUTAS
+                    if (request.url.startsWith('http')) {
+                        // Convertir URL absoluta a relativa
+                        const urlObj = new URL(request.url);
+                        request.url = urlObj.pathname + urlObj.search;
+                    }
                     // Auto-add API key for testing
                     if (!request.headers['X-API-Key']) {
                         request.headers['X-API-Key'] = 'API_KEY_PRUEBA';

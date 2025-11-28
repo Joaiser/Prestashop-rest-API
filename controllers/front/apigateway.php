@@ -18,28 +18,37 @@ class MyApiApigatewayModuleFrontController extends ModuleFrontController
 
   public function init()
   {
-
     header('Content-Type: application/json');
 
-    // ✅ CORS DINÁMICO POR CLIENTE
+    // ✅ CORS MEJORADO
     $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-    $apiKey = $this->apiBase->getApiKey();
-    $client = $this->apiBase->getClientByApiKey($apiKey);
 
-    // ✅ PERMITIR SIEMPRE EL MISMO ORIGEN (tu tienda)
-    $shopDomain = Tools::getShopDomain(true);
-    if ($origin === $shopDomain) {
+    // ✅ DOMINIOS PERMITIDOS EXPLÍCITAMENTE
+    $allowedDomains = [
+      'https://www.salamandraluz.net',
+      'https://test6.salamandraluz.net',
+      Tools::getShopDomain(true)
+    ];
+
+    // ✅ SI EL ORIGEN ESTÁ EN LA LISTA PERMITIDA, PERMITIRLO
+    if (in_array($origin, $allowedDomains)) {
       header('Access-Control-Allow-Origin: ' . $origin);
-    }
-    // ✅ PERMITIR ORIGENES DEL CLIENTE
-    else if ($client && !empty($client['allowed_origins'])) {
-      $allowedOrigins = json_decode($client['allowed_origins'], true);
+    } else {
+      // ✅ CORS NORMAL PARA CLIENTES DE API
+      $apiKey = $this->apiBase->getApiKey();
+      $client = $this->apiBase->getClientByApiKey($apiKey);
 
-      foreach ($allowedOrigins as $allowedOrigin) {
-        $pattern = '/^' . str_replace('\*', '.*', preg_quote($allowedOrigin, '/')) . '$/';
-        if ($origin === $allowedOrigin || preg_match($pattern, $origin)) {
-          header('Access-Control-Allow-Origin: ' . $origin);
-          break;
+      $shopDomain = Tools::getShopDomain(true);
+      if ($origin === $shopDomain) {
+        header('Access-Control-Allow-Origin: ' . $origin);
+      } else if ($client && !empty($client['allowed_origins'])) {
+        $allowedOrigins = json_decode($client['allowed_origins'], true);
+        foreach ($allowedOrigins as $allowedOrigin) {
+          $pattern = '/^' . str_replace('\*', '.*', preg_quote($allowedOrigin, '/')) . '$/';
+          if ($origin === $allowedOrigin || preg_match($pattern, $origin)) {
+            header('Access-Control-Allow-Origin: ' . $origin);
+            break;
+          }
         }
       }
     }
