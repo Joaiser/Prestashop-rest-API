@@ -679,56 +679,93 @@ class MyApiApiproductsModuleFrontController extends ModuleFrontController
         throw new Exception("Producto ID $productId no encontrado");
       }
 
-      $images = $product->getImages($this->apiBase->getLanguageId());
+      // Obtener todas las imágenes del producto
+      $allImages = $product->getImages($this->apiBase->getLanguageId());
       $imageTypes = ImageType::getImagesTypes('products');
-      $formattedImages = [];
 
-      foreach ($images as $image) {
-        $imageData = [
-          'id' => (int)$image['id_image'],
-          'position' => (int)$image['position'],
-          'cover' => (bool)$image['cover'],
-          'legend' => $image['legend'],
-          'sizes' => []
-        ];
+      $response = [
+        'base_images' => [],
+        'combination_images' => []
+      ];
 
-        // Generar URLs para todos los tipos de imagen
-        foreach ($imageTypes as $type) {
-          $imageUrl = $this->context->link->getImageLink(
-            $product->link_rewrite[$this->apiBase->getLanguageId()],
-            $image['id_image'],
-            $type['name']
-          );
+      // ✅ PROCESAR IMÁGENES BASE DEL PRODUCTO
+      foreach ($allImages as $image) {
+        $imageData = $this->formatImageData($product, $image, $imageTypes);
 
-          // Convertir a URL absoluta
-          $absoluteUrl = $this->getAbsoluteImageUrl($imageUrl);
-
-          $imageData['sizes'][$type['name']] = [
-            'url' => $absoluteUrl,
-            'width' => (int)$type['width'],
-            'height' => (int)$type['height']
-          ];
-        }
-
-        // Añadir también la URL original/base
-        $originalUrl = $this->context->link->getImageLink(
-          $product->link_rewrite[$this->apiBase->getLanguageId()],
-          $image['id_image']
-        );
-        $imageData['sizes']['original'] = [
-          'url' => $this->getAbsoluteImageUrl($originalUrl),
-          'width' => null,
-          'height' => null
-        ];
-
-        $formattedImages[] = $imageData;
+        // Agregar a imágenes base
+        $response['base_images'][] = $imageData;
       }
 
-      return $formattedImages;
+      // ✅ PROCESAR IMÁGENES DE COMBINACIONES SI LAS HAY
+      if ($product->hasAttributes()) {
+        $combinations = $product->getAttributesResume($this->apiBase->getLanguageId());
+
+        foreach ($combinations as $comb) {
+          $combinationId = $comb['id_product_attribute'];
+
+          if (empty($combinationId)) {
+            continue;
+          }
+
+          $combinationImages = $this->getCombinationImages($productId, $combinationId);
+
+          if (!empty($combinationImages)) {
+            $response['combination_images'][] = [
+              'combination_id' => (int)$combinationId,
+              'combination_reference' => $comb['reference'] ?? '',
+              'combination_attributes' => $comb['attribute_designation'] ?? '',
+              'images' => $combinationImages
+            ];
+          }
+        }
+      }
+
+      return $response;
     } catch (Exception $e) {
       ApiLogger::logError("Error getting product images for ID: $productId", $e);
       return ['error' => $e->getMessage()];
     }
+  }
+
+  private function formatImageData($product, $image, $imageTypes)
+  {
+    $imageData = [
+      'id' => (int)$image['id_image'],
+      'position' => (int)$image['position'],
+      'cover' => (bool)$image['cover'],
+      'legend' => $image['legend'],
+      'sizes' => []
+    ];
+
+    // Generar URLs para todos los tipos de imagen
+    foreach ($imageTypes as $type) {
+      $imageUrl = $this->context->link->getImageLink(
+        $product->link_rewrite[$this->apiBase->getLanguageId()],
+        $image['id_image'],
+        $type['name']
+      );
+
+      $absoluteUrl = $this->getAbsoluteImageUrl($imageUrl);
+
+      $imageData['sizes'][$type['name']] = [
+        'url' => $absoluteUrl,
+        'width' => (int)$type['width'],
+        'height' => (int)$type['height']
+      ];
+    }
+
+    // Añadir también la URL original/base
+    $originalUrl = $this->context->link->getImageLink(
+      $product->link_rewrite[$this->apiBase->getLanguageId()],
+      $image['id_image']
+    );
+    $imageData['sizes']['original'] = [
+      'url' => $this->getAbsoluteImageUrl($originalUrl),
+      'width' => null,
+      'height' => null
+    ];
+
+    return $imageData;
   }
 
   // ✅ CONVERTIR URL RELATIVA A ABSOLUTA
