@@ -21,7 +21,7 @@ PRÓXIMA SEMANA:
 🎓 Sistema de plugins
 
 CUANDO QUIERAS:
-📄 PDF documentación
+✅ PDF documentación
 
 ✅IMPORTANTE VER EL TEMA DE CORS,
 ✅ EN DESARROLLO ENTRA HASTA MI PERRA

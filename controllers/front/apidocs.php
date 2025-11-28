@@ -223,7 +223,7 @@ class MyApiApidocsModuleFrontController extends ModuleFrontController
       '/api/v1/products/{id}' => [
         'get' => [
           'summary' => 'Obtener producto específico',
-          'description' => 'Obtiene todos los detalles de un producto específico incluyendo imágenes y categorías',
+          'description' => 'Obtiene todos los detalles de un producto específico incluyendo imágenes, categorías, características, fabricante y COMBINACIONES CON SUS IMÁGENES',
           'security' => [['ApiKeyAuth' => []]],
           'parameters' => [
             [
@@ -448,7 +448,8 @@ class MyApiApidocsModuleFrontController extends ModuleFrontController
           'reference' => ['type' => 'string', 'example' => 'LAMP-001'],
           'active' => ['type' => 'boolean', 'example' => true],
           'stock' => ['type' => 'integer', 'example' => 25],
-          'description' => ['type' => 'string']
+          'description' => ['type' => 'string'],
+          'has_combinations' => ['type' => 'boolean', 'example' => false] // ✅ AÑADIR ESTO
         ]
       ],
       'ProductDetailed' => [
@@ -461,6 +462,7 @@ class MyApiApidocsModuleFrontController extends ModuleFrontController
           'active' => ['type' => 'boolean'],
           'stock' => ['type' => 'integer'],
           'description' => ['type' => 'string'],
+          'has_combinations' => ['type' => 'boolean'], // ✅ AÑADIR
           'images' => [
             'type' => 'array',
             'items' => ['$ref' => '#/components/schemas/ProductImage']
@@ -474,6 +476,27 @@ class MyApiApidocsModuleFrontController extends ModuleFrontController
           'features' => [
             'type' => 'array',
             'items' => ['type' => 'object']
+          ],
+          // ✅ NUEVO: AÑADIR COMBINACIONES
+          'combinations' => [
+            'type' => 'array',
+            'items' => ['$ref' => '#/components/schemas/ProductCombination']
+          ]
+        ]
+      ],
+      // ✅ NUEVO SCHEMA PARA COMBINACIONES
+      'ProductCombination' => [
+        'type' => 'object',
+        'properties' => [
+          'id' => ['type' => 'integer', 'example' => 2260],
+          'reference' => ['type' => 'string', 'example' => 'VT-DESTROY-BM'],
+          'quantity' => ['type' => 'integer', 'example' => 12],
+          'price' => ['type' => 'number', 'example' => 54.9],
+          'attributes' => ['type' => 'string', 'example' => 'Acabado - Blanco mate'],
+          'default_on' => ['type' => 'boolean', 'example' => false],
+          'images' => [
+            'type' => 'array',
+            'items' => ['$ref' => '#/components/schemas/ProductImage']
           ]
         ]
       ],
