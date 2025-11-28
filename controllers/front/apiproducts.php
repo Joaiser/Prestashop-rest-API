@@ -499,7 +499,8 @@ class MyApiApiproductsModuleFrontController extends ModuleFrontController
       'price' => $productObj->price,
       'reference' => $productObj->reference,
       'active' => (bool)$productObj->active,
-      'stock' => StockAvailable::getQuantityAvailableByProduct($productObj->id) // ✅ STOCK
+      'stock' => StockAvailable::getQuantityAvailableByProduct($productObj->id),
+      'has_combinations' => (bool)$productObj->hasAttributes(),
     ];
 
     // ✅ DATOS EXTRA para producto individual
@@ -508,9 +509,176 @@ class MyApiApiproductsModuleFrontController extends ModuleFrontController
       $formatted['categories'] = $productObj->getCategories();
       $formatted['features'] = $productObj->getFeatures();
       $formatted['manufacturer'] = $productObj->manufacturer_name;
+
+      if ($productObj->hasAttributes()) {
+        $formatted['combinations'] = $this->getProductCombinationsBasic($productObj->id);
+      }
     }
 
     return $formatted;
+  }
+
+  private function getProductCombinationsBasic($productId)
+  {
+    try {
+      ApiLogger::log("🔄 Starting getProductCombinationsBasic", ['product_id' => $productId]);
+
+      // ✅ VERSIÓN MÍNIMA Y SEGURA - SIN IMÁGENES POR AHORA
+      $product = new Product($productId);
+
+      // if (!Validate::isLoadedObject($product)) {
+      //   ApiLogger::log("❌ Product not found", ['product_id' => $productId]);
+      //   return [];
+      // }
+
+      // ApiLogger::log("✅ Product loaded", [
+      //   'id' => $product->id,
+      //   'name' => $product->name,
+      //   'has_attributes' => $product->hasAttributes()
+      // ]);
+
+      if (!$product->hasAttributes()) {
+        // ApiLogger::log("ℹ️ Product has no attributes", ['product_id' => $productId]);
+        return [];
+      }
+
+      $combinations = $product->getAttributesResume($this->apiBase->getLanguageId());
+
+      // ApiLogger::log("📊 Raw combinations data", [
+      //   'count' => count($combinations),
+      //   'combinations' => $combinations
+      // ]);
+
+      if (empty($combinations)) {
+        // ApiLogger::log("ℹ️ No combinations found", ['product_id' => $productId]);
+        return [];
+      }
+
+      $basicCombinations = [];
+      foreach ($combinations as $comb) {
+        $combinationId = $comb['id_product_attribute'];
+
+        // ✅ VERIFICACIÓN EXTRA DE SEGURIDAD
+        if (empty($combinationId)) {
+          // ApiLogger::log("⚠️ Empty combination ID", ['combination_data' => $comb]);
+          continue;
+        }
+
+        // ApiLogger::log("🔄 Processing combination", [
+        //   'combination_id' => $combinationId,
+        //   'reference' => $comb['reference'] ?? 'NO_REFERENCE'
+        // ]);
+
+        // ✅ PRECIO SIMPLIFICADO - usar precio del producto como fallback
+        $price = $product->price;
+        try {
+          $calculatedPrice = Product::getPriceStatic(
+            $productId,
+            false,
+            $combinationId,
+            6,
+            null,
+            null,
+            $this->apiBase->getLanguageId()
+          );
+          if ($calculatedPrice > 0) {
+            $price = $calculatedPrice;
+          }
+        } catch (Exception $e) {
+          ApiLogger::logError("⚠️ Error calculating combination price, using product price", $e);
+          // Mantener el precio del producto como fallback
+        }
+
+        $basicCombinations[] = [
+          'id' => (int)$combinationId,
+          'reference' => $comb['reference'] ?? '',
+          'quantity' => StockAvailable::getQuantityAvailableByProduct($productId, $combinationId),
+          'price' => (float)$price,
+          'attributes' => $comb['attribute_designation'] ?? '',
+          'default_on' => (bool)($comb['default_on'] ?? false),
+          'images' => [] // ✅ TEMPORALMENTE VACÍO - lo añadiremos después
+        ];
+      }
+
+      // ApiLogger::log("✅ Combinations processed successfully", [
+      //   'product_id' => $productId,
+      //   'combinations_count' => count($basicCombinations)
+      // ]);
+
+      return $basicCombinations;
+    } catch (Exception $e) {
+      // ApiLogger::logError("❌ CRITICAL ERROR in getProductCombinationsBasic", $e);
+      return []; // ✅ SIEMPRE retornar array vacío en caso de error
+    }
+  }
+
+
+  // ✅ ENDPOINT SEPARADO PARA COMBINACIONES COMPLETAS
+  private function getProductCombinationsDetailed($productId)
+  {
+    try {
+      $product = new Product($productId);
+
+      if (!Validate::isLoadedObject($product) || !$product->hasAttributes()) {
+        return [];
+      }
+
+      $combinations = $product->getAttributesResume($this->apiBase->getLanguageId());
+
+      if (empty($combinations)) {
+        return [];
+      }
+
+      $detailedCombinations = [];
+      foreach ($combinations as $comb) {
+        $combinationId = $comb['id_product_attribute'];
+        $combinationObj = new Combination($combinationId);
+
+        if (!Validate::isLoadedObject($combinationObj)) {
+          continue;
+        }
+
+        // Obtener atributos detallados
+        $attributeNames = $combinationObj->getAttributesName($this->apiBase->getLanguageId());
+        $attributes = [];
+        foreach ($attributeNames as $attribute) {
+          $attributes[] = [
+            'group' => $attribute['group_name'],
+            'name' => $attribute['attribute_name']
+          ];
+        }
+
+        // Obtener precio específico
+        $price = Product::getPriceStatic(
+          $productId,
+          false,
+          $combinationId,
+          6,
+          null,
+          null,
+          $this->apiBase->getLanguageId()
+        );
+
+        $detailedCombinations[] = [
+          'id' => (int)$combinationId,
+          'reference' => $combinationObj->reference ?: '',
+          'ean13' => $combinationObj->ean13 ?: '',
+          'upc' => $combinationObj->upc ?: '',
+          'price' => (float)$price,
+          'quantity' => StockAvailable::getQuantityAvailableByProduct($productId, $combinationId),
+          'attributes' => $attributes,
+          'images' => $this->getCombinationImages($productId, $combinationId),
+          'default_on' => (bool)$comb['default_on'],
+          'minimal_quantity' => (int)$combinationObj->minimal_quantity,
+          'available_date' => $combinationObj->available_date ?: ''
+        ];
+      }
+
+      return $detailedCombinations;
+    } catch (Exception $e) {
+      ApiLogger::logError("Error getting detailed combinations for product: $productId", $e);
+      return ['error' => $e->getMessage()];
+    }
   }
 
   // ✅ MÉTODO MEJORADO PARA OBTENER TODAS LAS IMÁGENES Y TAMAÑOS
