@@ -670,6 +670,7 @@ class MyApiApiproductsModuleFrontController extends ModuleFrontController
   }
 
   // ✅ MÉTODO MEJORADO PARA OBTENER TODAS LAS IMÁGENES Y TAMAÑOS
+  // ✅ SOLUCIÓN DEFINITIVA - SIN DUPLICACIONES
   private function getProductImages($productId)
   {
     try {
@@ -679,52 +680,35 @@ class MyApiApiproductsModuleFrontController extends ModuleFrontController
         throw new Exception("Producto ID $productId no encontrado");
       }
 
-      // Obtener todas las imágenes del producto
+      // ✅ OBTENER SOLO IMÁGENES BASE (las que NO están en combinaciones)
       $allImages = $product->getImages($this->apiBase->getLanguageId());
       $imageTypes = ImageType::getImagesTypes('products');
 
-      $response = [
-        'base_images' => [],
-        'combination_images' => []
-      ];
+      $baseImages = [];
 
-      // ✅ PROCESAR IMÁGENES BASE DEL PRODUCTO
       foreach ($allImages as $image) {
-        $imageData = $this->formatImageData($product, $image, $imageTypes);
-
-        // Agregar a imágenes base
-        $response['base_images'][] = $imageData;
-      }
-
-      // ✅ PROCESAR IMÁGENES DE COMBINACIONES SI LAS HAY
-      if ($product->hasAttributes()) {
-        $combinations = $product->getAttributesResume($this->apiBase->getLanguageId());
-
-        foreach ($combinations as $comb) {
-          $combinationId = $comb['id_product_attribute'];
-
-          if (empty($combinationId)) {
-            continue;
-          }
-
-          $combinationImages = $this->getCombinationImages($productId, $combinationId);
-
-          if (!empty($combinationImages)) {
-            $response['combination_images'][] = [
-              'combination_id' => (int)$combinationId,
-              'combination_reference' => $comb['reference'] ?? '',
-              'combination_attributes' => $comb['attribute_designation'] ?? '',
-              'images' => $combinationImages
-            ];
-          }
+        // ✅ FILTRAR: Solo imágenes que NO están asignadas a combinaciones
+        if (!$this->isImageInCombinations($image['id_image'])) {
+          $baseImages[] = $this->formatImageData($product, $image, $imageTypes);
         }
       }
 
-      return $response;
+      return [
+        'base_images' => $baseImages
+        // ❌ ELIMINAMOS combination_images aquí porque ya están en combinations[]
+      ];
     } catch (Exception $e) {
       ApiLogger::logError("Error getting product images for ID: $productId", $e);
       return ['error' => $e->getMessage()];
     }
+  }
+
+  // ✅ VERIFICAR SI UNA IMAGEN ESTÁ EN COMBINACIONES
+  private function isImageInCombinations($imageId)
+  {
+    $sql = 'SELECT COUNT(*) FROM ' . _DB_PREFIX_ . 'product_attribute_image 
+          WHERE id_image = ' . (int)$imageId;
+    return (bool)Db::getInstance()->getValue($sql);
   }
 
   private function formatImageData($product, $image, $imageTypes)
